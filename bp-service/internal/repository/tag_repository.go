@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"bloodPressureDiary/bp-service/internal/model"
 	"context"
 )
 

@@ -1,6 +1,8 @@
-package http
+package rest
 
 import (
+	"bloodPressureDiary/bp-service/internal/model"
+	"bloodPressureDiary/bp-service/internal/service"
 	"encoding/json"
 	"net/http"
 )

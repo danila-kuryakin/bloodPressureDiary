@@ -1,9 +1,11 @@
-module https://github.com/danila-kuryakin/bloodPressureDiary
+module bloodPressureDiary
 
 go 1.25
 
 require (
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/lib/pq v1.11.2
+	gopkg.in/telebot.v3 v3.3.8
 	gopkg.in/yaml.v2 v2.4.0
 )
+
+require github.com/lib/pq v1.11.2 // indirect

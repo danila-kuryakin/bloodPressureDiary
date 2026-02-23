@@ -1,22 +1,18 @@
 package repository
 
 import (
-	"bloodPressureDiary/bp-service/internal/models"
+	"bloodPressureDiary/bp-service/internal/repository/postgres"
 	"database/sql"
 )
 
-type BloodPressureMeasurement interface {
-	AddMeasurement(measurement models.Measurement) error
-	GetMeasurements(userId string) ([]models.Measurement, error)
-	DeleteMeasurement(id int64) error
-}
-
 type Repository struct {
-	BloodPressureMeasurement
+	PressureRepository
+	TagRepository
 }
 
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
-		BloodPressureMeasurement: NewBloodPressureMeasurementPostgres(db),
+		PressureRepository: postgres.NewPressureRepo(db),
+		TagRepository:      postgres.NewTagRepo(db),
 	}
 }

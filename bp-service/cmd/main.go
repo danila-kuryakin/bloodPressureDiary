@@ -1,25 +1,34 @@
 package main
 
 import (
-	"database/sql"
+	"bloodPressureDiary/bp-service/internal/config"
+	"bloodPressureDiary/bp-service/internal/repository"
+	"bloodPressureDiary/bp-service/internal/repository/postgres"
+	"bloodPressureDiary/bp-service/internal/service"
+	"bloodPressureDiary/bp-service/internal/transport/rest"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
-
-	_ "github.com/lib/pq"
-	"https:/github.com/danila-kuryakin/bloodPressureDiary/bp-service/internal/repository/postgres"
-	"https:/github.com/danila-kuryakin/bloodPressureDiary/bp-service/internal/service"
+	"strconv"
 )
 
 func main() {
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		dsn = "postgres://user:pass@localhost:5432/bp?sslmode=disable"
-	}
+	config.LoadEnv("bp-service/.env")
+	cfg := config.LoadConfig("bp-service/configs/config.yml")
 
-	db, err := sql.Open("postgres", dsn)
+	// Конфигурация и подключение к PostgreSQL
+	postgresConf := repository.PostgresConfig{
+		Username: os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		Host:     cfg.Database.Host,
+		Port:     strconv.Itoa(cfg.Database.Port),
+		Name:     cfg.Database.Name,
+		SSLMode:  cfg.Database.SSLMode,
+	}
+	db, err := repository.NewPostgresDB(postgresConf)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 
 	tagRepo := postgres.NewTagRepo(db)
@@ -29,9 +38,13 @@ func main() {
 	pressureService := service.NewPressureService(pressureRepo, tagRepo)
 
 	mux := http.NewServeMux()
-	httpTransport.NewTagHandler(tagService).Register(mux)
-	httpTransport.NewPressureHandler(pressureService).Register(mux)
 
-	log.Println("listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	rest.NewTagHandler(tagService).Register(mux)
+	rest.NewPressureHandler(pressureService).Register(mux)
+
+	// Создаем http сервер
+	log.Println(fmt.Sprintf("Server started on: %s", cfg.Server.Port))
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.Server.Port), nil); err != nil {
+		return
+	}
 }
