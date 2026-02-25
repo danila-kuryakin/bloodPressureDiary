@@ -55,9 +55,6 @@ func saveTagPressureMenu() *telebot.ReplyMarkup {
 	m := &telebot.ReplyMarkup{}
 	m.Inline(
 		m.Row(
-			m.Data(constants.NameSave, constants.EventPressureSaveTag),
-		),
-		m.Row(
 			m.Data(constants.NameBack, constants.EventBack),
 		),
 	)

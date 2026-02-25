@@ -8,6 +8,6 @@ type BloodPressure struct {
 	Systolic  int       `json:"systolic"`
 	Diastolic int       `json:"diastolic"`
 	Pulse     int       `json:"pulse"`
-	TagIDs    []int64   `json:"tag_ids"`
+	TagIDs    []string  `json:"tag_ids"`
 	CreatedAt time.Time `json:"created_at"`
 }

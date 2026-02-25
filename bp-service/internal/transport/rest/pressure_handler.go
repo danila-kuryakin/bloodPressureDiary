@@ -25,13 +25,25 @@ func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPost:
 		var p model.BloodPressure
-		json.NewDecoder(r.Body).Decode(&p)
+		err := json.NewDecoder(r.Body).Decode(&p)
+		if err != nil {
+			return
+		}
 		p.UserID = userID
-		h.svc.Create(r.Context(), &p)
-		json.NewEncoder(w).Encode(p)
+		err = h.svc.Create(r.Context(), &p)
+		if err != nil {
+			return
+		}
+		err = json.NewEncoder(w).Encode(p)
+		if err != nil {
+			return
+		}
 
 	case http.MethodGet:
 		res, _ := h.svc.List(r.Context(), userID)
-		json.NewEncoder(w).Encode(res)
+		err := json.NewEncoder(w).Encode(res)
+		if err != nil {
+			return
+		}
 	}
 }

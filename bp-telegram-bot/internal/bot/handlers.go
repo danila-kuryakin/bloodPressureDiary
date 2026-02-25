@@ -28,11 +28,11 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	switch data {
 	case constants.EventPressure:
 		bot.state[chatID] = constants.StatePressure
-		return c.Edit("Меню давления.", crudPressureMenu())
+		return c.Edit("Меню давления.\nВыберите раздел.", crudPressureMenu())
 
 	case constants.EventTag:
 		bot.state[chatID] = constants.StateTag
-		return c.Edit("Меню тегов.", crudTagMenu())
+		return c.Edit("Меню тегов.\nВыберите раздел.", crudTagMenu())
 
 		// CRUD Pressure
 	case constants.EventPressureCreate:
@@ -79,6 +79,13 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventTagSave:
 		fmt.Println("EventPressureSave", bot.buffer[c.Chat().ID]["TagsList"])
 
+		tag := bot.buffer[c.Chat().ID]["TagsList"].([]string)[0]
+
+		err := bot.api.CreateTag(tag)
+		if err != nil {
+			return err
+		}
+
 		bot.state[chatID] = constants.StateIdle
 		bot.buffer[c.Chat().ID] = nil
 		return c.Edit("Успешно сохранено.\nВыберите раздел:", mainMenu())
@@ -92,7 +99,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		switch bot.state[chatID] {
 		case constants.StatePressure, constants.StateTag:
 			bot.state[chatID] = constants.StateIdle
-			return c.Edit("Выберите раздел:", mainMenu())
+			return c.Edit("Выберите раздел.", mainMenu())
 
 		case constants.StatePressureSys, constants.StatePressureDia,
 			constants.StatePressurePulse, constants.StatePressureTags:
@@ -101,7 +108,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 		case constants.StatePressureCreate:
 			bot.state[chatID] = constants.StatePressure
-			return c.Edit("Выберете что хотите ввести.", crudPressureMenu())
+			return c.Edit("Меню давления.\nВыберите раздел.", crudPressureMenu())
 
 		case constants.StateTagName:
 			bot.state[chatID] = constants.StateTagCreate
@@ -109,16 +116,78 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 		case constants.StateTagCreate, constants.StateTagDelete:
 			bot.state[chatID] = constants.StatePressure
-			return c.Edit("Выберите раздел:", crudTagMenu())
+			if bot.buffer[chatID]["TagsList"] != nil {
+
+				retStr := bot.displayTags(chatID)
+				retStr += "\nМеню тегов.\nВыберите раздел."
+				return c.Edit(retStr, crudTagMenu())
+			}
+			return c.Edit("Меню тегов.\nВыберите раздел.", crudTagMenu())
 
 		default:
 			bot.state[chatID] = constants.StateIdle
-			return c.Edit("Выберите раздел:", mainMenu())
+			return c.Edit("Выберите раздел.", mainMenu())
 		}
 	}
 
 	bot.state[c.Chat().ID] = constants.StateIdle
 	return c.Edit("Ой, что-то пошло не так.\nВыберите раздел:", mainMenu())
+}
+
+func (bot *Bot) displayPressure(chatID int64) string {
+	retString := "Давление:\n"
+
+	if bot.buffer[chatID]["Systolic"] != nil {
+		retString += fmt.Sprintf("Верхнее: %s\n", bot.buffer[chatID]["Systolic"].(string))
+	} else {
+
+		retString += fmt.Sprintf("Верхнее: nil\n")
+	}
+
+	if bot.buffer[chatID]["Diastolic"] != nil {
+		retString += fmt.Sprintf("Нижнее: %s\n", bot.buffer[chatID]["Diastolic"].(string))
+	} else {
+
+		retString += fmt.Sprintf("Нижнее: nil\n")
+	}
+
+	if bot.buffer[chatID]["Pulse"] != nil {
+		retString += fmt.Sprintf("Пульс: %s\n", bot.buffer[chatID]["Pulse"].(string))
+	} else {
+
+		retString += fmt.Sprintf("Пульс: nil\n")
+	}
+
+	if bot.buffer[chatID]["Tags"] != nil {
+		retString += fmt.Sprintf("Теги: ")
+
+		fmt.Println(bot.buffer[chatID]["Tags"])
+		for i, tag := range bot.buffer[chatID]["Tags"].([]string) {
+			if i == 0 {
+				retString += fmt.Sprintf("%s", tag)
+			} else {
+				retString += fmt.Sprintf(", %s", tag)
+			}
+		}
+	} else {
+		retString += fmt.Sprintf("Теги: nil\n")
+	}
+
+	return retString
+}
+
+func (bot *Bot) displayTags(chatID int64) string {
+	retString := "Теги:\n"
+
+	if bot.buffer[chatID]["TagsList"] != nil {
+		for i, tag := range bot.buffer[chatID]["TagsList"].([]string) {
+
+			retString += fmt.Sprintf("%d) %s\n", i, tag)
+		}
+	} else {
+		retString += fmt.Sprintf("nil\n")
+	}
+	return retString
 }
 
 func (bot *Bot) Messages(c telebot.Context) error {
@@ -143,7 +212,9 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			ID:   msgID,
 			Chat: c.Chat(),
 		}
-		_, err := bot.tb.Edit(editMsg, "Выберете что хотите ввести.", createPressureMenu())
+
+		retStr := bot.displayPressure(chatID)
+		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
@@ -159,7 +230,9 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			ID:   msgID,
 			Chat: c.Chat(),
 		}
-		_, err := bot.tb.Edit(editMsg, "Выберете что хотите ввести.", createPressureMenu())
+
+		retStr := bot.displayPressure(chatID)
+		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
@@ -175,14 +248,22 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			ID:   msgID,
 			Chat: c.Chat(),
 		}
-		_, err := bot.tb.Edit(editMsg, "Выберете что хотите ввести.", createPressureMenu())
+
+		retStr := bot.displayPressure(chatID)
+		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case constants.StatePressureTags:
-		bot.buffer[c.Chat().ID]["Tags"] = msg
+		if bot.buffer[chatID]["Tags"] == nil {
+			bot.buffer[chatID]["Tags"] = []string{}
+		}
+
+		tags := bot.buffer[chatID]["Tags"].([]string)
+		tags = append(tags, msg)
+		bot.buffer[c.Chat().ID]["Tags"] = tags
 		bot.state[chatID] = constants.StatePressureCreate
 		bot.DeleteLastUserMsg(c)
 		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
@@ -191,14 +272,22 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			ID:   msgID,
 			Chat: c.Chat(),
 		}
-		_, err := bot.tb.Edit(editMsg, "Выберете что хотите ввести.", createPressureMenu())
+
+		retStr := bot.displayPressure(chatID)
+		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case constants.StateTagCreate:
-		bot.buffer[c.Chat().ID]["TagsList"] = msg
+		if bot.buffer[chatID]["TagsList"] == nil {
+			bot.buffer[chatID]["TagsList"] = []string{}
+		}
+
+		tags := bot.buffer[chatID]["TagsList"].([]string)
+		tags = append(tags, msg)
+		bot.buffer[chatID]["TagsList"] = tags
 		bot.state[chatID] = constants.StateTagCreate
 		bot.DeleteLastUserMsg(c)
 		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
@@ -207,7 +296,9 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			ID:   msgID,
 			Chat: c.Chat(),
 		}
-		_, err := bot.tb.Edit(editMsg, "Выберете что хотите ввести.", createTagMenu())
+		retStr := bot.displayTags(chatID)
+		retStr += "\nВведите еще теги"
+		_, err := bot.tb.Edit(editMsg, retStr, createTagMenu())
 		if err != nil {
 			return err
 		}
