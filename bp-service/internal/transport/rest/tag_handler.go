@@ -4,7 +4,7 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"bloodPressureDiary/bp-service/internal/service"
 	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -23,20 +23,30 @@ func (h *TagHandler) Register(mux *http.ServeMux) {
 }
 
 func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.URL.Query())
-
-	userID := r.Header.Get("X-User-ID")
+	userId := r.Header.Get("user_id")
 
 	switch r.Method {
 	case http.MethodPost:
 		var t model.UserTag
-		json.NewDecoder(r.Body).Decode(&t)
-		t.UserID = userID
-		h.svc.Tag.Create(r.Context(), &t)
-		json.NewEncoder(w).Encode(t)
+		err := json.NewDecoder(r.Body).Decode(&t)
+		if err != nil {
+			return
+		}
+
+		t.UserID = userId
+
+		err = h.svc.Tag.Create(r.Context(), &t)
+		if err != nil {
+			log.Println("Create tags:", err)
+			return
+		}
+		err = json.NewEncoder(w).Encode(t)
+		if err != nil {
+			return
+		}
 
 	case http.MethodGet:
-		res, _ := h.svc.Tag.List(r.Context(), userID)
+		res, _ := h.svc.Tag.List(r.Context(), userId)
 		json.NewEncoder(w).Encode(res)
 	}
 }

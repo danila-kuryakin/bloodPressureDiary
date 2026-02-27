@@ -2,8 +2,10 @@ package bot
 
 import (
 	"bloodPressureDiary/bp-telegram-bot/internal/bot/constants"
+	"bloodPressureDiary/bp-telegram-bot/internal/model"
 	"fmt"
 	"log"
+	"time"
 
 	"gopkg.in/telebot.v3"
 )
@@ -17,11 +19,11 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	chatID := c.Sender().ID
 	data := c.Callback().Data[1:]
 
-	if bot.buffer[c.Chat().ID] == nil {
-		bot.buffer[c.Chat().ID] = map[string]any{}
+	if bot.buffer[chatID] == nil {
+		bot.buffer[chatID] = map[string]any{}
 	}
 
-	bot.buffer[c.Chat().ID]["MenuMsg"] = c.Callback().Message.ID
+	bot.buffer[chatID]["MenuMsg"] = c.Callback().Message.ID
 
 	log.Println(chatID, c.Callback().Message.ID)
 
@@ -54,17 +56,17 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 	case constants.EventPressureTags:
 		bot.state[chatID] = constants.StatePressureTags
-		//bot.buffer[c.Chat().ID] = map[string]any{}
+		//bot.buffer[chatID] = map[string]any{}
 		return c.Edit("Выберете теги из имеющихся.", saveTagPressureMenu())
 
 	case constants.EventPressureSave:
-		fmt.Println("EventPressureSave", bot.buffer[c.Chat().ID]["Systolic"],
-			bot.buffer[c.Chat().ID]["Diastolic"],
-			bot.buffer[c.Chat().ID]["Pulse"],
-			bot.buffer[c.Chat().ID]["Tags"])
+		fmt.Println("EventPressureSave", bot.buffer[chatID]["Systolic"],
+			bot.buffer[chatID]["Diastolic"],
+			bot.buffer[chatID]["Pulse"],
+			bot.buffer[chatID]["Tags"])
 
 		bot.state[chatID] = constants.StateIdle
-		bot.buffer[c.Chat().ID] = nil
+		bot.buffer[chatID] = nil
 		return c.Edit("Успешно сохранено.\nВыберите раздел:", mainMenu())
 
 		// CRUD TAG
@@ -77,17 +79,18 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		return c.Edit("Введите тег, который хотите удалить.", deleteTagMenu())
 
 	case constants.EventTagSave:
-		fmt.Println("EventPressureSave", bot.buffer[c.Chat().ID]["TagsList"])
+		fmt.Println("EventPressureSave", bot.buffer[chatID]["TagsList"])
 
-		tag := bot.buffer[c.Chat().ID]["TagsList"].([]string)[0]
+		tag := bot.buffer[chatID]["TagsList"].([]string)
+		userTag := model.UserTag{UserID: fmt.Sprintf("%d", chatID), Name: tag, CreatedAt: time.Now()}
 
-		err := bot.api.CreateTag(tag)
+		err := bot.api.CreateTag(userTag, fmt.Sprintf("%d", chatID))
 		if err != nil {
 			return err
 		}
 
 		bot.state[chatID] = constants.StateIdle
-		bot.buffer[c.Chat().ID] = nil
+		bot.buffer[chatID] = nil
 		return c.Edit("Успешно сохранено.\nВыберите раздел:", mainMenu())
 
 	case constants.EventTagName:

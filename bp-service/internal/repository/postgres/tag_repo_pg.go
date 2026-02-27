@@ -4,6 +4,7 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"context"
 	"database/sql"
+	"fmt"
 )
 
 type TagRepo struct {
@@ -15,12 +16,29 @@ func NewTagRepo(db *sql.DB) *TagRepo {
 }
 
 func (r *TagRepo) Create(ctx context.Context, tag *model.UserTag) error {
-	return r.db.QueryRowContext(ctx, `
-		INSERT INTO user_tags (user_id, name)
-		VALUES ($1, $2)
-		RETURNING id, is_active, created_at`,
-		tag.UserID, tag.Name,
-	).Scan(&tag.ID, &tag.IsActive, &tag.CreatedAt)
+	fmt.Println("Repo Create", tag)
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+
+		}
+	}(tx)
+
+	query := `INSERT INTO user_tags (user_id, name)
+		VALUES ($1, $2)`
+
+	for _, tagID := range tag.Name {
+		_, err := tx.ExecContext(ctx, query, tag.UserID, tagID)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model.UserTag, error) {
@@ -32,12 +50,20 @@ func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+
+		}
+	}(rows)
 
 	var res []*model.UserTag
 	for rows.Next() {
 		t := &model.UserTag{}
-		rows.Scan(&t.ID, &t.UserID, &t.Name, &t.IsActive, &t.CreatedAt)
+		err := rows.Scan(&t.ID, &t.UserID, &t.Name, &t.IsActive, &t.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
 		res = append(res, t)
 	}
 	return res, nil

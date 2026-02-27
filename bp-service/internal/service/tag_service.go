@@ -16,7 +16,7 @@ func NewTagService(r *repository.Repository) *TagService {
 }
 
 func (s *TagService) Create(ctx context.Context, tag *model.UserTag) error {
-	if tag.Name == "" {
+	if tag.UserID == "" {
 		return errors.ErrInvalidTagName
 	}
 	return s.repo.TagRepository.Create(ctx, tag)

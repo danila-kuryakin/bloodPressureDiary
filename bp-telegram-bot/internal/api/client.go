@@ -19,7 +19,7 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
-func (c *Client) do(method, path string, body any) (*http.Response, error) {
+func (c *Client) do(method, path string, body any, userId string) (*http.Response, error) {
 	var buf *bytes.Buffer
 
 	if body != nil {
@@ -37,6 +37,8 @@ func (c *Client) do(method, path string, body any) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("user_id", userId)
 
 	req.Header.Set("Content-Type", "application/json")
 	return c.Client.Do(req)
