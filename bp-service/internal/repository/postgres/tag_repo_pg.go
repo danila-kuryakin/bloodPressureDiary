@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 type TagRepo struct {
@@ -16,7 +17,7 @@ func NewTagRepo(db *sql.DB) *TagRepo {
 }
 
 func (r *TagRepo) Create(ctx context.Context, tag *model.UserTag) error {
-	fmt.Println("Repo Create", tag)
+	//fmt.Println("Repo Create", tag)
 
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -32,8 +33,32 @@ func (r *TagRepo) Create(ctx context.Context, tag *model.UserTag) error {
 	query := `INSERT INTO user_tags (user_id, name)
 		VALUES ($1, $2)`
 
-	for _, tagID := range tag.Name {
-		_, err := tx.ExecContext(ctx, query, tag.UserID, tagID)
+	_, err = tx.ExecContext(ctx, query, tag.UserID, tag.Name)
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (r *TagRepo) CreateAll(ctx context.Context, tag *model.UserTag) error {
+	//fmt.Println("Repo Create", tag)
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func(tx *sql.Tx) {
+		err := tx.Rollback()
+		if err != nil {
+
+		}
+	}(tx)
+
+	query := `INSERT INTO user_tags (user_id, name)
+		VALUES ($1, $2)`
+
+	for _, tagName := range tag.Name {
+		_, err := tx.ExecContext(ctx, query, tag.UserID, tagName)
 		if err != nil {
 			return err
 		}
@@ -42,6 +67,7 @@ func (r *TagRepo) Create(ctx context.Context, tag *model.UserTag) error {
 }
 
 func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model.UserTag, error) {
+	fmt.Println("Repo ListActiveByUser", userID)
 	rows, err := r.db.QueryContext(ctx, `
 		SELECT id, user_id, name, is_active, created_at
 		FROM user_tags
@@ -53,7 +79,7 @@ func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model
 	defer func(rows *sql.Rows) {
 		err := rows.Close()
 		if err != nil {
-
+			log.Println("Close ListActiveByUser:", err)
 		}
 	}(rows)
 
@@ -62,6 +88,7 @@ func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model
 		t := &model.UserTag{}
 		err := rows.Scan(&t.ID, &t.UserID, &t.Name, &t.IsActive, &t.CreatedAt)
 		if err != nil {
+			log.Println("Scan ListActiveByUser:", err)
 			return nil, err
 		}
 		res = append(res, t)

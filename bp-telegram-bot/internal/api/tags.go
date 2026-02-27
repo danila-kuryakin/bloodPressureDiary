@@ -4,6 +4,7 @@ import (
 	model_tg "bloodPressureDiary/bp-telegram-bot/internal/model"
 	"bloodPressureDiary/bp-telegram-bot/model"
 	"encoding/json"
+	"io"
 	"strconv"
 )
 
@@ -28,7 +29,12 @@ func (c *Client) ListTags(userId string) ([]model.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 
 	var tags []model.Tag
 	err = json.NewDecoder(resp.Body).Decode(&tags)

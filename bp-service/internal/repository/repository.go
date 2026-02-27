@@ -14,6 +14,7 @@ type PressureRepository interface {
 
 type TagRepository interface {
 	Create(ctx context.Context, tag *model.UserTag) error
+	CreateAll(ctx context.Context, tag *model.UserTag) error
 	ListActiveByUser(ctx context.Context, userID string) ([]*model.UserTag, error)
 	Rename(ctx context.Context, tagID int64, userID, name string) error
 	Delete(ctx context.Context, tagID int64, userID string) error

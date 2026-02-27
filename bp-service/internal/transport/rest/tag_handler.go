@@ -47,7 +47,10 @@ func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
 
 	case http.MethodGet:
 		res, _ := h.svc.Tag.List(r.Context(), userId)
-		json.NewEncoder(w).Encode(res)
+		err := json.NewEncoder(w).Encode(res)
+		if err != nil {
+			return
+		}
 	}
 }
 

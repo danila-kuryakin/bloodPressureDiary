@@ -29,16 +29,19 @@ func (c *Client) do(method, path string, body any, userId string) (*http.Respons
 		buf = bytes.NewBuffer(nil)
 	}
 
-	fmt.Println(method)
-	fmt.Println(c.BaseURL + path)
-	fmt.Println(body)
-
 	req, err := http.NewRequest(method, c.BaseURL+path, buf)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("user_id", userId)
+
+	fmt.Println("====================")
+	fmt.Println(method)
+	fmt.Println(c.BaseURL + path)
+	fmt.Println(body)
+	fmt.Println(userId)
+	fmt.Println("====================\n")
 
 	req.Header.Set("Content-Type", "application/json")
 	return c.Client.Do(req)

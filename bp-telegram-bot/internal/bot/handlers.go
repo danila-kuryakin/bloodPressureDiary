@@ -5,6 +5,7 @@ import (
 	"bloodPressureDiary/bp-telegram-bot/internal/model"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"gopkg.in/telebot.v3"
@@ -34,7 +35,25 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 	case constants.EventTag:
 		bot.state[chatID] = constants.StateTag
-		return c.Edit("Меню тегов.\nВыберите раздел.", crudTagMenu())
+
+		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		if err != nil {
+			return err
+		}
+		retStr := ""
+
+		fmt.Println(tags)
+		if len(tags) == 0 {
+			retStr = "Меню тегов.\nВыберите раздел."
+		} else {
+			retStr = "Меню тегов.\nВаши теги:\n"
+			for _, tag := range tags {
+				retStr += tag.Name + "\n"
+			}
+			retStr += "Выберите раздел."
+		}
+
+		return c.Edit(retStr, crudTagMenu())
 
 		// CRUD Pressure
 	case constants.EventPressureCreate:
@@ -82,11 +101,19 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		fmt.Println("EventPressureSave", bot.buffer[chatID]["TagsList"])
 
 		tag := bot.buffer[chatID]["TagsList"].([]string)
-		userTag := model.UserTag{UserID: fmt.Sprintf("%d", chatID), Name: tag, CreatedAt: time.Now()}
+		//userTag := model.UserTag{UserID: strconv.FormatInt(chatID, 10), Name: tag, CreatedAt: time.Now()}
 
-		err := bot.api.CreateTag(userTag, fmt.Sprintf("%d", chatID))
-		if err != nil {
-			return err
+		for _, name := range tag {
+			tags := model.UserTag{
+				UserID:    strconv.FormatInt(chatID, 10),
+				Name:      name,
+				CreatedAt: time.Now(),
+			}
+
+			err := bot.api.CreateTag(tags, strconv.FormatInt(chatID, 10))
+			if err != nil {
+				return err
+			}
 		}
 
 		bot.state[chatID] = constants.StateIdle

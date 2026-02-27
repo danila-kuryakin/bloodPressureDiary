@@ -54,7 +54,7 @@ func (h *Handler) LogRequest(next http.Handler) http.Handler {
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
-	h.LogRequest(mux)
+	//h.LogRequest(mux)
 	h.PressureHandlerInterface.Register(mux)
 	h.TagHandlerInterface.Register(mux)
 }
