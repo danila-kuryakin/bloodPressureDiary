@@ -8,10 +8,10 @@ import (
 )
 
 type PressureHandler struct {
-	svc *service.PressureService
+	svc *service.Service
 }
 
-func NewPressureHandler(s *service.PressureService) *PressureHandler {
+func NewPressureHandler(s *service.Service) *PressureHandler {
 	return &PressureHandler{svc: s}
 }
 
@@ -30,7 +30,7 @@ func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		p.UserID = userID
-		err = h.svc.Create(r.Context(), &p)
+		err = h.svc.Pressure.Create(r.Context(), &p)
 		if err != nil {
 			return
 		}
@@ -40,7 +40,7 @@ func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case http.MethodGet:
-		res, _ := h.svc.List(r.Context(), userID)
+		res, _ := h.svc.Pressure.List(r.Context(), userID)
 		err := json.NewEncoder(w).Encode(res)
 		if err != nil {
 			return

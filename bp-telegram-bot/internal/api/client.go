@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -27,6 +28,10 @@ func (c *Client) do(method, path string, body any) (*http.Response, error) {
 	} else {
 		buf = bytes.NewBuffer(nil)
 	}
+
+	fmt.Println(method)
+	fmt.Println(c.BaseURL + path)
+	fmt.Println(body)
 
 	req, err := http.NewRequest(method, c.BaseURL+path, buf)
 	if err != nil {

@@ -4,15 +4,16 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"bloodPressureDiary/bp-service/internal/service"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
 
 type TagHandler struct {
-	svc *service.TagService
+	svc *service.Service
 }
 
-func NewTagHandler(s *service.TagService) *TagHandler {
+func NewTagHandler(s *service.Service) *TagHandler {
 	return &TagHandler{svc: s}
 }
 
@@ -22,6 +23,8 @@ func (h *TagHandler) Register(mux *http.ServeMux) {
 }
 
 func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.URL.Query())
+
 	userID := r.Header.Get("X-User-ID")
 
 	switch r.Method {
@@ -29,11 +32,11 @@ func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
 		var t model.UserTag
 		json.NewDecoder(r.Body).Decode(&t)
 		t.UserID = userID
-		h.svc.Create(r.Context(), &t)
+		h.svc.Tag.Create(r.Context(), &t)
 		json.NewEncoder(w).Encode(t)
 
 	case http.MethodGet:
-		res, _ := h.svc.List(r.Context(), userID)
+		res, _ := h.svc.Tag.List(r.Context(), userID)
 		json.NewEncoder(w).Encode(res)
 	}
 }
@@ -46,9 +49,9 @@ func (h *TagHandler) tagByID(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPut:
 		var body struct{ Name string }
 		json.NewDecoder(r.Body).Decode(&body)
-		h.svc.Rename(r.Context(), id, userID, body.Name)
+		h.svc.Tag.Rename(r.Context(), id, userID, body.Name)
 
 	case http.MethodDelete:
-		h.svc.Delete(r.Context(), id, userID)
+		h.svc.Tag.Delete(r.Context(), id, userID)
 	}
 }

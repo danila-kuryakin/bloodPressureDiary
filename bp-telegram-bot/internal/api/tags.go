@@ -7,6 +7,7 @@ import (
 )
 
 func (c *Client) CreateTag(name string) error {
+	//fmt.Println("CreateTag ", name)
 	_, err := c.do("POST", "/tags", map[string]string{"name": name})
 	return err
 }

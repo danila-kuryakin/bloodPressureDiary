@@ -3,7 +3,6 @@ package main
 import (
 	"bloodPressureDiary/bp-service/internal/config"
 	"bloodPressureDiary/bp-service/internal/repository"
-	"bloodPressureDiary/bp-service/internal/repository/postgres"
 	"bloodPressureDiary/bp-service/internal/service"
 	"bloodPressureDiary/bp-service/internal/transport/rest"
 	"fmt"
@@ -31,20 +30,16 @@ func main() {
 		log.Println(err)
 	}
 
-	tagRepo := postgres.NewTagRepo(db)
-	pressureRepo := postgres.NewPressureRepo(db)
-
-	tagService := service.NewTagService(tagRepo)
-	pressureService := service.NewPressureService(pressureRepo, tagRepo)
+	repo := repository.NewRepository(db)
+	svc := service.NewService(repo)
+	hand := rest.NewHandler(svc)
 
 	mux := http.NewServeMux()
-
-	rest.NewTagHandler(tagService).Register(mux)
-	rest.NewPressureHandler(pressureService).Register(mux)
+	hand.Register(mux)
 
 	// Создаем http сервер
 	log.Println(fmt.Sprintf("Server started on: %s", cfg.Server.Port))
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.Server.Port), nil); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%s", cfg.Server.Port), mux); err != nil {
 		return
 	}
 }
