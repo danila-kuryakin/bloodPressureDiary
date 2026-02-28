@@ -30,7 +30,32 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	switch data {
 	case constants.EventPressure:
 		bot.state[chatID] = constants.StatePressure
-		return c.Edit("Меню давления.\nВыберите раздел.", crudPressureMenu())
+
+		press, err := bot.api.ListPressure(strconv.FormatInt(chatID, 10))
+		if err != nil {
+			return err
+		}
+		retStr := ""
+
+		if len(press) == 0 {
+			retStr = "Меню давления.\nВыберите раздел."
+		} else {
+			retStr = "Меню давления.\nВаши теги:\n"
+			for i, pres := range press {
+				if i < 9 {
+					retStr += fmt.Sprintf("%d)   %d-%d-%d | %s\n", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
+				} else {
+					retStr += fmt.Sprintf("%d) %d-%d-%d | %s\n", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
+				}
+				if i > 10 {
+					break
+				}
+			}
+			retStr += fmt.Sprintf("Всего %d\n", len(press))
+			retStr += "Выберите раздел."
+		}
+
+		return c.Edit(retStr, crudPressureMenu())
 
 	case constants.EventTag:
 		bot.state[chatID] = constants.StateTag
