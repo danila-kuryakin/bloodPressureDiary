@@ -19,8 +19,8 @@ func (c *Client) UpdateTag(id int, name string, userId string) error {
 	return err
 }
 
-func (c *Client) DeleteTag(id int, userId string) error {
-	_, err := c.do("DELETE", "/tags/"+strconv.Itoa(id), nil, userId)
+func (c *Client) DeleteTag(name string, userId string) error {
+	_, err := c.do("DELETE", "/tags/"+name, nil, userId)
 	return err
 }
 

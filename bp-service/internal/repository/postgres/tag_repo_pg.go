@@ -96,51 +96,64 @@ func (r *TagRepo) ListActiveByUser(ctx context.Context, userID string) ([]*model
 	return res, nil
 }
 
-func (r *TagRepo) ExistsForUser(ctx context.Context, userID string, tagID int64) (bool, error) {
+func (r *TagRepo) ExistsForUser(ctx context.Context, userID string, tagName string) (bool, error) {
 	var ok bool
 	err := r.db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM user_tags
 			WHERE id=$1 AND user_id=$2 AND is_active=true
-		)`, tagID, userID).Scan(&ok)
+		)`, tagName, userID).Scan(&ok)
 	return ok, err
 }
 
-func (r *TagRepo) IsUsed(ctx context.Context, tagID int64) (bool, error) {
+func (r *TagRepo) IsUsed(ctx context.Context, tagName string) (bool, error) {
 	var used bool
 	err := r.db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM blood_pressure_tag WHERE tag_id=$1
-		)`, tagID).Scan(&used)
+		)`, tagName).Scan(&used)
+
+	if err != nil {
+		log.Println("IsUsed:", err)
+	}
+
 	return used, err
 }
 
-func (r *TagRepo) Rename(ctx context.Context, tagID int64, userID, name string) error {
+func (r *TagRepo) Rename(ctx context.Context, tagName string, userID, name string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE user_tags
 		SET name=$1
-		WHERE id=$2 AND user_id=$3 AND is_active=true`,
-		name, tagID, userID)
+		WHERE name=$2 AND user_id=$3 AND is_active=true`,
+		name, tagName, userID)
 	return err
 }
 
-func (r *TagRepo) Delete(ctx context.Context, tagID int64, userID string) error {
-	used, err := r.IsUsed(ctx, tagID)
-	if err != nil {
-		return err
-	}
+func (r *TagRepo) Delete(ctx context.Context, tagName string, userID string) error {
 
-	if used {
-		_, err = r.db.ExecContext(ctx, `
-			UPDATE user_tags
-			SET is_active=false
-			WHERE id=$1 AND user_id=$2`,
-			tagID, userID)
-		return err
-	}
+	log.Println("Repo Delete", tagName, userID)
 
-	_, err = r.db.ExecContext(ctx,
-		`DELETE FROM user_tags WHERE id=$1 AND user_id=$2`,
-		tagID, userID)
+	//used, err := r.IsUsed(ctx, tagName)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//log.Println("1")
+	//
+	//if used {
+	//	_, err = r.db.ExecContext(ctx, `
+	//		UPDATE user_tags
+	//		SET is_active=false
+	//		WHERE name=$1 AND user_id=$2`,
+	//		tagName, userID)
+	//	return err
+	//}
+	//
+	//log.Println("1")
+
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM user_tags WHERE name=$1 AND user_id=$2`,
+		tagName, userID)
+
 	return err
 }

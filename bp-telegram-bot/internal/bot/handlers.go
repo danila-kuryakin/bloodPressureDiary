@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/telebot.v3"
@@ -26,8 +27,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 	bot.buffer[chatID]["MenuMsg"] = c.Callback().Message.ID
 
-	log.Println(chatID, c.Callback().Message.ID)
-
 	switch data {
 	case constants.EventPressure:
 		bot.state[chatID] = constants.StatePressure
@@ -42,7 +41,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		}
 		retStr := ""
 
-		fmt.Println(tags)
 		if len(tags) == 0 {
 			retStr = "Меню тегов.\nВыберите раздел."
 		} else {
@@ -95,7 +93,20 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 	case constants.EventTagDelete:
 		bot.state[chatID] = constants.StateTagDelete
-		return c.Edit("Введите тег, который хотите удалить.", deleteTagMenu())
+
+		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		if err != nil {
+			return err
+		}
+
+		eventMap := make(map[int]string)
+
+		for i, tag := range tags {
+			eventMap[i] = tag.Name
+		}
+		bot.buffer[chatID]["DeleteTags"] = eventMap
+
+		return c.Edit("Введите тег, который хотите удалить.", deleteTagMenu(eventMap))
 
 	case constants.EventTagSave:
 		fmt.Println("EventPressureSave", bot.buffer[chatID]["TagsList"])
@@ -146,23 +157,91 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 		case constants.StateTagCreate, constants.StateTagDelete:
 			bot.state[chatID] = constants.StatePressure
-			if bot.buffer[chatID]["TagsList"] != nil {
-
-				retStr := bot.displayTags(chatID)
-				retStr += "\nМеню тегов.\nВыберите раздел."
-				return c.Edit(retStr, crudTagMenu())
+			tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+			if err != nil {
+				return err
 			}
-			return c.Edit("Меню тегов.\nВыберите раздел.", crudTagMenu())
+			retStr := ""
+
+			fmt.Println(tags)
+			if len(tags) == 0 {
+				retStr = "Меню тегов.\nВыберите раздел."
+			} else {
+				retStr = "Меню тегов.\nВаши теги:\n"
+				for _, tag := range tags {
+					retStr += tag.Name + "\n"
+				}
+				retStr += "Выберите раздел."
+			}
+
+			return c.Edit(retStr, crudTagMenu())
 
 		default:
 			bot.state[chatID] = constants.StateIdle
 			return c.Edit("Выберите раздел.", mainMenu())
+		}
+	default:
+		// Проверяем, что это нужный тип события
+		if strings.HasPrefix(data, "event_delete_tag_") {
+			// Достаём индекс
+			idStr := strings.TrimPrefix(data, "event_delete_tag_")
+
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				return c.Respond()
+			}
+
+			delTags := bot.buffer[chatID]["DeleteTags"].(map[int]string)
+
+			fmt.Println("Нажата кнопка удаления тега:", id, delTags[id])
+			// тут вызываешь API удаления тега
+			err = bot.api.DeleteTag(delTags[id], strconv.FormatInt(chatID, 10))
+			if err != nil {
+				return err
+			}
+			delete(delTags, id)
+			bot.buffer[chatID]["DeleteTags"] = delTags
+
+			//return c.Respond()
+
+			//bot.state[chatID] = constants.StateTagDelete
+			//tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+			//if err != nil {
+			//	return err
+			//}
+			return c.Edit("Введите тег, который хотите удалить.", deleteTagMenu(delTags))
 		}
 	}
 
 	bot.state[c.Chat().ID] = constants.StateIdle
 	return c.Edit("Ой, что-то пошло не так.\nВыберите раздел:", mainMenu())
 }
+
+//func (b *Bot) deleteTagCallbacks(c telebot.Context) error {
+//
+//	data := c.Data() // это callback data
+//	log.Println("Bot deleteTagCallbacks", data)
+//	// Проверяем, что это нужный тип события
+//	if strings.HasPrefix(data, "event_delete_tag_") {
+//
+//		// Достаём индекс
+//		idStr := strings.TrimPrefix(data, "event_delete_tag_")
+//
+//		id, err := strconv.Atoi(idStr)
+//		if err != nil {
+//			return c.Respond()
+//		}
+//
+//		fmt.Println("Нажата кнопка удаления тега:", id)
+//
+//		// тут вызываешь API удаления тега
+//		// b.bpClient.DeleteTag(...)
+//
+//		return c.Respond()
+//	}
+//
+//	return c.Respond()
+//}
 
 func (bot *Bot) displayPressure(chatID int64) string {
 	retString := "Давление:\n"
@@ -348,5 +427,6 @@ func (bot *Bot) DeleteLastUserMsg(c telebot.Context) {
 func (bot *Bot) InitRoutes() {
 	bot.tb.Handle("/start", bot.StartHandle)
 	bot.tb.Handle(telebot.OnCallback, bot.Callbacks)
+	//bot.tb.Handle(telebot.OnCallback, bot.deleteTagCallbacks)
 	bot.tb.Handle(telebot.OnText, bot.Messages)
 }

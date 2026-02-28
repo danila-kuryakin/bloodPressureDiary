@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type TagHandler struct {
@@ -55,16 +54,18 @@ func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TagHandler) tagByID(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
-	id, _ := strconv.ParseInt(r.URL.Path[len("/tags/"):], 10, 64)
-
+	userID := r.Header.Get("user_id")
+	tagName := r.URL.Path[len("/tags/"):]
 	switch r.Method {
 	case http.MethodPut:
 		var body struct{ Name string }
 		json.NewDecoder(r.Body).Decode(&body)
-		h.svc.Tag.Rename(r.Context(), id, userID, body.Name)
+		h.svc.Tag.Rename(r.Context(), tagName, userID, body.Name)
 
 	case http.MethodDelete:
-		h.svc.Tag.Delete(r.Context(), id, userID)
+		err := h.svc.Tag.Delete(r.Context(), tagName, userID)
+		if err != nil {
+			return
+		}
 	}
 }

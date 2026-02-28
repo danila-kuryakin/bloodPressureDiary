@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -36,12 +35,12 @@ func (c *Client) do(method, path string, body any, userId string) (*http.Respons
 
 	req.Header.Set("user_id", userId)
 
-	fmt.Println("====================")
-	fmt.Println(method)
-	fmt.Println(c.BaseURL + path)
-	fmt.Println(body)
-	fmt.Println(userId)
-	fmt.Println("====================\n")
+	//fmt.Println("====================")
+	//fmt.Println(method)
+	//fmt.Println(c.BaseURL + path)
+	//fmt.Println(body)
+	//fmt.Println(userId)
+	//fmt.Println("====================\n")
 
 	req.Header.Set("Content-Type", "application/json")
 	return c.Client.Do(req)

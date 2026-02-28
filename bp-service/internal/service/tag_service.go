@@ -26,13 +26,13 @@ func (s *TagService) List(ctx context.Context, userID string) ([]*model.UserTag,
 	return s.repo.TagRepository.ListActiveByUser(ctx, userID)
 }
 
-func (s *TagService) Rename(ctx context.Context, tagID int64, userID, name string) error {
+func (s *TagService) Rename(ctx context.Context, tagName string, userID, name string) error {
 	if name == "" {
 		return errors.ErrInvalidTagName
 	}
-	return s.repo.TagRepository.Rename(ctx, tagID, userID, name)
+	return s.repo.TagRepository.Rename(ctx, tagName, userID, name)
 }
 
-func (s *TagService) Delete(ctx context.Context, tagID int64, userID string) error {
-	return s.repo.TagRepository.Delete(ctx, tagID, userID)
+func (s *TagService) Delete(ctx context.Context, tagName string, userID string) error {
+	return s.repo.TagRepository.Delete(ctx, tagName, userID)
 }
