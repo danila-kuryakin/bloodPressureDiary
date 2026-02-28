@@ -4,6 +4,7 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"bloodPressureDiary/bp-service/internal/service"
 	"encoding/json"
+	"log"
 	"net/http"
 )
 
@@ -20,7 +21,7 @@ func (h *PressureHandler) Register(mux *http.ServeMux) {
 }
 
 func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
-	userID := r.Header.Get("X-User-ID")
+	userID := r.Header.Get("user_id")
 
 	switch r.Method {
 	case http.MethodPost:
@@ -32,6 +33,7 @@ func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 		p.UserID = userID
 		err = h.svc.Pressure.Create(r.Context(), &p)
 		if err != nil {
+			log.Println("pressure create error", err)
 			return
 		}
 		err = json.NewEncoder(w).Encode(p)

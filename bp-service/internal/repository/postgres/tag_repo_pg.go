@@ -101,7 +101,7 @@ func (r *TagRepo) ExistsForUser(ctx context.Context, userID string, tagName stri
 	err := r.db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM user_tags
-			WHERE id=$1 AND user_id=$2 AND is_active=true
+			WHERE name=$1 AND user_id=$2 AND is_active=true
 		)`, tagName, userID).Scan(&ok)
 	return ok, err
 }

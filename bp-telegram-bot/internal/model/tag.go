@@ -9,3 +9,7 @@ type UserTag struct {
 	IsActive  bool      `json:"is_active"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type Tag struct {
+	Name string `json:"name"`
+}

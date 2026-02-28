@@ -73,14 +73,49 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 	case constants.EventPressureTags:
 		bot.state[chatID] = constants.StatePressureTags
+
+		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		if err != nil {
+			return err
+		}
+
+		eventMap := make(map[int]string)
+
+		for i, tag := range tags {
+			eventMap[i] = tag.Name
+		}
+		bot.buffer[chatID]["AddTags"] = eventMap
+
+		return c.Edit("Введите тег, который хотите добавить.", addPressureTagMenu(eventMap))
+
 		//bot.buffer[chatID] = map[string]any{}
-		return c.Edit("Выберете теги из имеющихся.", saveTagPressureMenu())
+		//return c.Edit("Выберете теги из имеющихся.", saveTagPressureMenu())
 
 	case constants.EventPressureSave:
-		fmt.Println("EventPressureSave", bot.buffer[chatID]["Systolic"],
+		fmt.Println("EventPressureSave",
+			bot.buffer[chatID]["Systolic"],
 			bot.buffer[chatID]["Diastolic"],
 			bot.buffer[chatID]["Pulse"],
 			bot.buffer[chatID]["Tags"])
+
+		sys := bot.buffer[chatID]["Systolic"]
+
+		if sys == nil || bot.buffer[chatID]["Diastolic"] == nil ||
+			bot.buffer[chatID]["Pulse"] == nil || bot.buffer[chatID]["Tags"] == nil {
+			return c.Respond()
+		}
+
+		press := model.BloodPressure{
+			Systolic:  bot.buffer[chatID]["Systolic"].(int),
+			Diastolic: bot.buffer[chatID]["Diastolic"].(int),
+			Pulse:     bot.buffer[chatID]["Pulse"].(int),
+			TagNames:  bot.buffer[chatID]["Tags"].([]string),
+		}
+
+		err := bot.api.CreatePressure(press, strconv.FormatInt(chatID, 10))
+		if err != nil {
+			return err
+		}
 
 		bot.state[chatID] = constants.StateIdle
 		bot.buffer[chatID] = nil
@@ -192,8 +227,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			}
 
 			delTags := bot.buffer[chatID]["DeleteTags"].(map[int]string)
-
-			fmt.Println("Нажата кнопка удаления тега:", id, delTags[id])
 			// тут вызываешь API удаления тега
 			err = bot.api.DeleteTag(delTags[id], strconv.FormatInt(chatID, 10))
 			if err != nil {
@@ -201,15 +234,31 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			}
 			delete(delTags, id)
 			bot.buffer[chatID]["DeleteTags"] = delTags
-
-			//return c.Respond()
-
-			//bot.state[chatID] = constants.StateTagDelete
-			//tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
-			//if err != nil {
-			//	return err
-			//}
 			return c.Edit("Введите тег, который хотите удалить.", deleteTagMenu(delTags))
+		} else if strings.HasPrefix(data, "event_add_tag_") {
+			// Достаём индекс
+			idStr := strings.TrimPrefix(data, "event_add_tag_")
+
+			id, err := strconv.Atoi(idStr)
+			if err != nil {
+				return c.Respond()
+			}
+
+			delTags := bot.buffer[chatID]["AddTags"].(map[int]string)
+
+			//fmt.Println("Нажата кнопка добавления тега:", id, delTags[id])
+
+			if bot.buffer[chatID]["Tags"] == nil {
+				bot.buffer[chatID]["Tags"] = []string{}
+			}
+
+			tags := bot.buffer[chatID]["Tags"].([]string)
+			tags = append(tags, delTags[id])
+			bot.buffer[c.Chat().ID]["Tags"] = tags
+
+			retStr := bot.displayPressure(chatID)
+
+			return c.Edit(retStr, addPressureTagMenu(delTags))
 		}
 	}
 
@@ -217,53 +266,24 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	return c.Edit("Ой, что-то пошло не так.\nВыберите раздел:", mainMenu())
 }
 
-//func (b *Bot) deleteTagCallbacks(c telebot.Context) error {
-//
-//	data := c.Data() // это callback data
-//	log.Println("Bot deleteTagCallbacks", data)
-//	// Проверяем, что это нужный тип события
-//	if strings.HasPrefix(data, "event_delete_tag_") {
-//
-//		// Достаём индекс
-//		idStr := strings.TrimPrefix(data, "event_delete_tag_")
-//
-//		id, err := strconv.Atoi(idStr)
-//		if err != nil {
-//			return c.Respond()
-//		}
-//
-//		fmt.Println("Нажата кнопка удаления тега:", id)
-//
-//		// тут вызываешь API удаления тега
-//		// b.bpClient.DeleteTag(...)
-//
-//		return c.Respond()
-//	}
-//
-//	return c.Respond()
-//}
-
 func (bot *Bot) displayPressure(chatID int64) string {
 	retString := "Давление:\n"
 
 	if bot.buffer[chatID]["Systolic"] != nil {
-		retString += fmt.Sprintf("Верхнее: %s\n", bot.buffer[chatID]["Systolic"].(string))
+		retString += fmt.Sprintf("Верхнее: %d\n", bot.buffer[chatID]["Systolic"].(int))
 	} else {
-
 		retString += fmt.Sprintf("Верхнее: nil\n")
 	}
 
 	if bot.buffer[chatID]["Diastolic"] != nil {
-		retString += fmt.Sprintf("Нижнее: %s\n", bot.buffer[chatID]["Diastolic"].(string))
+		retString += fmt.Sprintf("Нижнее: %d\n", bot.buffer[chatID]["Diastolic"].(int))
 	} else {
-
 		retString += fmt.Sprintf("Нижнее: nil\n")
 	}
 
 	if bot.buffer[chatID]["Pulse"] != nil {
-		retString += fmt.Sprintf("Пульс: %s\n", bot.buffer[chatID]["Pulse"].(string))
+		retString += fmt.Sprintf("Пульс: %d\n", bot.buffer[chatID]["Pulse"].(int))
 	} else {
-
 		retString += fmt.Sprintf("Пульс: nil\n")
 	}
 
@@ -312,7 +332,12 @@ func (bot *Bot) Messages(c telebot.Context) error {
 	log.Println(msg)
 	switch bot.state[chatID] {
 	case constants.StatePressureSys:
-		bot.buffer[c.Chat().ID]["Systolic"] = msg
+		msgInt, err := strconv.Atoi(msg)
+		if err != nil {
+			return err
+		}
+		bot.buffer[c.Chat().ID]["Systolic"] = msgInt
+
 		bot.state[chatID] = constants.StatePressureCreate
 		bot.DeleteLastUserMsg(c)
 		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
@@ -323,14 +348,18 @@ func (bot *Bot) Messages(c telebot.Context) error {
 		}
 
 		retStr := bot.displayPressure(chatID)
-		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
+		_, err = bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case constants.StatePressureDia:
-		bot.buffer[c.Chat().ID]["Diastolic"] = msg
+		msgInt, err := strconv.Atoi(msg)
+		if err != nil {
+			return err
+		}
+		bot.buffer[c.Chat().ID]["Diastolic"] = msgInt
 		bot.state[chatID] = constants.StatePressureCreate
 		bot.DeleteLastUserMsg(c)
 		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
@@ -341,14 +370,18 @@ func (bot *Bot) Messages(c telebot.Context) error {
 		}
 
 		retStr := bot.displayPressure(chatID)
-		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
+		_, err = bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
 		return nil
 
 	case constants.StatePressurePulse:
-		bot.buffer[c.Chat().ID]["Pulse"] = msg
+		msgInt, err := strconv.Atoi(msg)
+		if err != nil {
+			return err
+		}
+		bot.buffer[c.Chat().ID]["Pulse"] = msgInt
 		bot.state[chatID] = constants.StatePressureCreate
 		bot.DeleteLastUserMsg(c)
 		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
@@ -359,35 +392,35 @@ func (bot *Bot) Messages(c telebot.Context) error {
 		}
 
 		retStr := bot.displayPressure(chatID)
-		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
+		_, err = bot.tb.Edit(editMsg, retStr, createPressureMenu())
 		if err != nil {
 			return err
 		}
 		return nil
 
-	case constants.StatePressureTags:
-		if bot.buffer[chatID]["Tags"] == nil {
-			bot.buffer[chatID]["Tags"] = []string{}
-		}
-
-		tags := bot.buffer[chatID]["Tags"].([]string)
-		tags = append(tags, msg)
-		bot.buffer[c.Chat().ID]["Tags"] = tags
-		bot.state[chatID] = constants.StatePressureCreate
-		bot.DeleteLastUserMsg(c)
-		msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
-
-		editMsg := &telebot.Message{
-			ID:   msgID,
-			Chat: c.Chat(),
-		}
-
-		retStr := bot.displayPressure(chatID)
-		_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
-		if err != nil {
-			return err
-		}
-		return nil
+	//case constants.StatePressureTags:
+	//	if bot.buffer[chatID]["Tags"] == nil {
+	//		bot.buffer[chatID]["Tags"] = []string{}
+	//	}
+	//
+	//	tags := bot.buffer[chatID]["Tags"].([]string)
+	//	tags = append(tags, msg)
+	//	bot.buffer[c.Chat().ID]["Tags"] = tags
+	//	bot.state[chatID] = constants.StatePressureCreate
+	//	bot.DeleteLastUserMsg(c)
+	//	msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
+	//
+	//	editMsg := &telebot.Message{
+	//		ID:   msgID,
+	//		Chat: c.Chat(),
+	//	}
+	//
+	//	retStr := bot.displayPressure(chatID)
+	//	_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return nil
 
 	case constants.StateTagCreate:
 		if bot.buffer[chatID]["TagsList"] == nil {

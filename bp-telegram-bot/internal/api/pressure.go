@@ -1,25 +1,36 @@
 package api
 
 import (
-	"bloodPressureDiary/bp-telegram-bot/model"
+	"bloodPressureDiary/bp-telegram-bot/internal/model"
+	"io"
 	"strconv"
 )
 
-func (c *Client) CreatePressure(p model.BloodPressureCreate, userId string) error {
+func (c *Client) CreatePressure(p model.BloodPressure, userId string) error {
 	resp, err := c.do("POST", "/pressure", p, userId)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 	return nil
 }
 
-func (c *Client) UpdatePressure(id int, p model.BloodPressureCreate, userId string) error {
+func (c *Client) UpdatePressure(id int, p model.BloodPressure, userId string) error {
 	resp, err := c.do("PUT", "/pressure/"+strconv.Itoa(id), p, userId)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 	return nil
 }
 
@@ -28,6 +39,11 @@ func (c *Client) DeletePressure(id int, userId string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+
+		}
+	}(resp.Body)
 	return nil
 }

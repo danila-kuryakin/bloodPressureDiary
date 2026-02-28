@@ -1,9 +1,11 @@
 package service
 
 import (
+	"bloodPressureDiary/bp-service/internal/errors"
 	"bloodPressureDiary/bp-service/internal/model"
 	"bloodPressureDiary/bp-service/internal/repository"
 	"context"
+	"log"
 )
 
 type PressureService struct {
@@ -15,17 +17,18 @@ func NewPressureService(repo *repository.Repository) *PressureService {
 }
 
 func (s *PressureService) Create(ctx context.Context, p *model.BloodPressure) error {
-	//for _, tagID := range p.TagIDs {
-	//	ok, err := s.repo.TagRepository.ExistsForUser(ctx, p.UserID, tagID)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	if !ok {
-	//		return errors.ErrTagNotOwnedByUser
-	//	}
-	//}
-	//return s.repo.PressureRepository.Create(ctx, p)
-	return nil
+	for _, tagName := range p.TagNames {
+		ok, err := s.repo.TagRepository.ExistsForUser(ctx, p.UserID, tagName)
+		if err != nil {
+			log.Println("Error checking tag exists: ", err)
+			return err
+		}
+		if !ok {
+			log.Println("Tag exists: ", tagName)
+			return errors.ErrTagNotOwnedByUser
+		}
+	}
+	return s.repo.PressureRepository.Create(ctx, p)
 }
 
 func (s *PressureService) List(ctx context.Context, userID string) ([]*model.BloodPressure, error) {

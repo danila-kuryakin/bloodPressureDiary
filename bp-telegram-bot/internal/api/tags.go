@@ -1,14 +1,13 @@
 package api
 
 import (
-	model_tg "bloodPressureDiary/bp-telegram-bot/internal/model"
-	"bloodPressureDiary/bp-telegram-bot/model"
+	"bloodPressureDiary/bp-telegram-bot/internal/model"
 	"encoding/json"
 	"io"
 	"strconv"
 )
 
-func (c *Client) CreateTag(name model_tg.UserTag, userId string) error {
+func (c *Client) CreateTag(name model.UserTag, userId string) error {
 	//fmt.Println("CreateTag ", name)
 	_, err := c.do("POST", "/tags", name, userId)
 	return err

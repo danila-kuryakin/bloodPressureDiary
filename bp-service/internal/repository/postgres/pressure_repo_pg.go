@@ -4,6 +4,9 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"context"
 	"database/sql"
+	"log"
+
+	"github.com/lib/pq"
 )
 
 type PressureRepo struct {
@@ -19,7 +22,38 @@ func (r *PressureRepo) Create(ctx context.Context, p *model.BloodPressure) error
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+
+	rows, err := tx.QueryContext(ctx, `SELECT id FROM user_tags WHERE name = ANY($1)`, pq.Array(p.TagNames))
+	if err != nil {
+		err := tx.Rollback()
+		if err != nil {
+			return err
+		}
+		return err
+	}
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Println("Close Rows error:", err)
+			err := tx.Rollback()
+			if err != nil {
+				return
+			}
+		}
+	}(rows)
+
+	var tagIds []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				return err
+			}
+			return err
+		}
+		tagIds = append(tagIds, id)
+	}
 
 	err = tx.QueryRowContext(ctx, `
 		INSERT INTO blood_pressure (user_id, systolic, diastolic, pulse)
@@ -28,19 +62,29 @@ func (r *PressureRepo) Create(ctx context.Context, p *model.BloodPressure) error
 		p.UserID, p.Systolic, p.Diastolic, p.Pulse,
 	).Scan(&p.ID, &p.CreatedAt)
 	if err != nil {
-		return err
-	}
-
-	for _, tagID := range p.TagIDs {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO blood_pressure_tag (pressure_id, tag_id)
-			VALUES ($1, $2)`,
-			p.ID, tagID)
+		log.Println("Create QueryRow error:", err)
+		err := tx.Rollback()
 		if err != nil {
 			return err
 		}
+		return err
 	}
 
+	for _, tagId := range tagIds {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO blood_pressure_tag (pressure_id, tag_id)
+			VALUES ($1, $2)`,
+			p.ID, tagId)
+		if err != nil {
+			log.Println("Create Exec error:", err)
+			err := tx.Rollback()
+			if err != nil {
+				return err
+			}
+			return err
+
+		}
+	}
 	return tx.Commit()
 }
 
