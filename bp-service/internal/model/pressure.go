@@ -11,3 +11,8 @@ type BloodPressure struct {
 	TagNames  []string  `json:"tag_names"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type RetTag struct {
+	PressureId int64  `json:"pressure_id"`
+	Tag        string `json:"name"`
+}

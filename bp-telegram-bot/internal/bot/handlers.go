@@ -31,6 +31,8 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventPressure:
 		bot.state[chatID] = constants.StatePressure
 
+		MAX_VIEW_PRESSURE := 10
+
 		press, err := bot.api.ListPressure(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
@@ -40,18 +42,35 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		if len(press) == 0 {
 			retStr = "Меню давления.\nВыберите раздел."
 		} else {
-			retStr = "Меню давления.\nВаши теги:\n"
+			retStr = "Меню давления.\nВаши измерения:\n"
 			for i, pres := range press {
 				if i < 9 {
-					retStr += fmt.Sprintf("%d)   %d-%d-%d | %s\n", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
+					retStr += fmt.Sprintf("%d)   %d-%d-%d | %s | ", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
 				} else {
-					retStr += fmt.Sprintf("%d) %d-%d-%d | %s\n", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
+					retStr += fmt.Sprintf("%d) %d-%d-%d | %s | ", i+1, pres.Systolic, pres.Diastolic, pres.Pulse, pres.CreatedAt.Format("15:04:05 02.01.06"))
 				}
-				if i > 10 {
+
+				if pres.TagNames != nil {
+					retStr += "\t"
+					for j, tag := range pres.TagNames {
+						fmt.Println(tag)
+						if j < len(pres.TagNames)-1 {
+							retStr += fmt.Sprintf("%s, ", tag)
+						} else {
+							retStr += fmt.Sprintf("%s\n", tag)
+						}
+					}
+				}
+
+				if i+1 >= MAX_VIEW_PRESSURE {
 					break
 				}
 			}
-			retStr += fmt.Sprintf("Всего %d\n", len(press))
+			if len(press) <= MAX_VIEW_PRESSURE {
+				retStr += fmt.Sprintf("Показано %d из %d\n", len(press), len(press))
+			} else {
+				retStr += fmt.Sprintf("Показано %d из %d\n", MAX_VIEW_PRESSURE, len(press))
+			}
 			retStr += "Выберите раздел."
 		}
 
@@ -113,9 +132,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 		return c.Edit("Введите тег, который хотите добавить.", addPressureTagMenu(eventMap))
 
-		//bot.buffer[chatID] = map[string]any{}
-		//return c.Edit("Выберете теги из имеющихся.", saveTagPressureMenu())
-
 	case constants.EventPressureSave:
 		fmt.Println("EventPressureSave",
 			bot.buffer[chatID]["Systolic"],
@@ -172,7 +188,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		fmt.Println("EventPressureSave", bot.buffer[chatID]["TagsList"])
 
 		tag := bot.buffer[chatID]["TagsList"].([]string)
-		//userTag := model.UserTag{UserID: strconv.FormatInt(chatID, 10), Name: tag, CreatedAt: time.Now()}
 
 		for _, name := range tag {
 			tags := model.UserTag{
@@ -270,8 +285,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			}
 
 			delTags := bot.buffer[chatID]["AddTags"].(map[int]string)
-
-			//fmt.Println("Нажата кнопка добавления тега:", id, delTags[id])
 
 			if bot.buffer[chatID]["Tags"] == nil {
 				bot.buffer[chatID]["Tags"] = []string{}
@@ -422,30 +435,6 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			return err
 		}
 		return nil
-
-	//case constants.StatePressureTags:
-	//	if bot.buffer[chatID]["Tags"] == nil {
-	//		bot.buffer[chatID]["Tags"] = []string{}
-	//	}
-	//
-	//	tags := bot.buffer[chatID]["Tags"].([]string)
-	//	tags = append(tags, msg)
-	//	bot.buffer[c.Chat().ID]["Tags"] = tags
-	//	bot.state[chatID] = constants.StatePressureCreate
-	//	bot.DeleteLastUserMsg(c)
-	//	msgID := bot.buffer[c.Chat().ID]["MenuMsg"].(int)
-	//
-	//	editMsg := &telebot.Message{
-	//		ID:   msgID,
-	//		Chat: c.Chat(),
-	//	}
-	//
-	//	retStr := bot.displayPressure(chatID)
-	//	_, err := bot.tb.Edit(editMsg, retStr, createPressureMenu())
-	//	if err != nil {
-	//		return err
-	//	}
-	//	return nil
 
 	case constants.StateTagCreate:
 		if bot.buffer[chatID]["TagsList"] == nil {

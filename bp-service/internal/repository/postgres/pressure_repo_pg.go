@@ -4,6 +4,7 @@ import (
 	"bloodPressureDiary/bp-service/internal/model"
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/lib/pq"
@@ -97,13 +98,70 @@ func (r *PressureRepo) ListByUser(ctx context.Context, userID string) ([]*model.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Println("ListByUser Close Rows error:", err)
+		}
+	}(rows)
 
-	var res []*model.BloodPressure
+	var pressures []*model.BloodPressure
+	var IDs []*int64
 	for rows.Next() {
 		p := &model.BloodPressure{}
-		rows.Scan(&p.ID, &p.UserID, &p.Systolic, &p.Diastolic, &p.Pulse, &p.CreatedAt)
-		res = append(res, p)
+		var id = new(int64)
+		err := rows.Scan(&id, &p.UserID, &p.Systolic, &p.Diastolic, &p.Pulse, &p.CreatedAt)
+		if err != nil {
+			log.Println("ListByUser Rows Scan error:", err)
+			return nil, err
+		}
+		p.ID = *id
+
+		pressures = append(pressures, p)
+		IDs = append(IDs, id)
 	}
-	return res, nil
+
+	rowsIDs, err := r.db.QueryContext(ctx, `
+		select bpt.pressure_id, ut.name
+			from blood_pressure_tag as bpt
+			join user_tags ut on ut.id = bpt.tag_id
+			where bpt.pressure_id = ANY($1)`, pq.Array(IDs))
+	if err != nil {
+		return nil, err
+	}
+	defer func(rowsIDs *sql.Rows) {
+		err := rowsIDs.Close()
+		if err != nil {
+			log.Println("ListByUser Close Rows error:", err)
+		}
+	}(rows)
+
+	tagsMap := make(map[int64][]string)
+	for rowsIDs.Next() {
+		retTag := &model.RetTag{}
+		err := rowsIDs.Scan(&retTag.PressureId, &retTag.Tag)
+		if err != nil {
+			log.Println("ListByUser Rows Scan error:", err)
+			return nil, err
+		}
+		fmt.Println("retTag", *retTag)
+
+		if tagsMap[retTag.PressureId] == nil {
+			tagsMap[retTag.PressureId] = []string{retTag.Tag}
+		} else {
+			tagsMap[retTag.PressureId] = append(tagsMap[retTag.PressureId], retTag.Tag)
+		}
+	}
+
+	fmt.Println("tagsMap", tagsMap)
+
+	for _, pressure := range pressures {
+		pressure.TagNames = tagsMap[pressure.ID]
+	}
+
+	for _, prs := range pressures {
+		fmt.Println("pressures:", prs)
+	}
+
+	return pressures, nil
 }

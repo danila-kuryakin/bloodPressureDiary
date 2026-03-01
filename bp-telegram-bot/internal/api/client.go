@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"os"
 )
 
 type Client struct {
@@ -34,6 +35,7 @@ func (c *Client) do(method, path string, body any, userId string) (*http.Respons
 	}
 
 	req.Header.Set("user_id", userId)
+	req.Header.Set("token_api", os.Getenv("SERVICE_TOKEN_API"))
 
 	//fmt.Println("====================")
 	//fmt.Println(method)
