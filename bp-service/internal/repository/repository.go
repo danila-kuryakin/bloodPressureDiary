@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"bloodPressureDiary/bp-service/internal/model"
-	"bloodPressureDiary/bp-service/internal/repository/postgres"
+	"bp-service/internal/model"
+	"bp-service/internal/repository/postgres"
 	"context"
 	"database/sql"
 )

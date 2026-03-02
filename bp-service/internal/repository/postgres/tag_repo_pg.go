@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"bloodPressureDiary/bp-service/internal/model"
+	"bp-service/internal/model"
 	"context"
 	"database/sql"
 	"fmt"

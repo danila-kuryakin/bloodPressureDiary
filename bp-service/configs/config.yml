@@ -1,8 +1,8 @@
 server:
-  port: 8081
+  port: 8080
 
 database:
-  host: localhost
+  host: db-postgres
   port: 5432
   dbname: bloodPressureDiary
   sslmode: disable

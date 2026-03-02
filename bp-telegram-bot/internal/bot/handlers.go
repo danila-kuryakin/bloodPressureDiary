@@ -1,8 +1,8 @@
 package bot
 
 import (
-	"bloodPressureDiary/bp-telegram-bot/internal/bot/constants"
-	"bloodPressureDiary/bp-telegram-bot/internal/model"
+	"bp-telegram-bot/internal/bot/constants"
+	"bp-telegram-bot/internal/model"
 	"fmt"
 	"log"
 	"strconv"

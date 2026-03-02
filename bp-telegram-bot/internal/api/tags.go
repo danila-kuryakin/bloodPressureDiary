@@ -1,7 +1,7 @@
 package api
 
 import (
-	"bloodPressureDiary/bp-telegram-bot/internal/model"
+	"bp-telegram-bot/internal/model"
 	"encoding/json"
 	"io"
 	"strconv"

@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"bloodPressureDiary/bp-telegram-bot/internal/bot/constants"
+	"bp-telegram-bot/internal/bot/constants"
 	"fmt"
 
 	"gopkg.in/telebot.v3"

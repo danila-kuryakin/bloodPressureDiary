@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bloodPressureDiary/bp-service/internal/config"
-	"bloodPressureDiary/bp-service/internal/repository"
-	"bloodPressureDiary/bp-service/internal/service"
-	"bloodPressureDiary/bp-service/internal/transport/rest"
+	"bp-service/internal/config"
+	"bp-service/internal/repository"
+	"bp-service/internal/service"
+	"bp-service/internal/transport/rest"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-	config.LoadEnv("bp-service/.env")
-	cfg := config.LoadConfig("bp-service/configs/config.yml")
+	config.LoadEnv(".env")
+	cfg := config.LoadConfig("configs/config.yml")
 
 	// Конфигурация и подключение к PostgreSQL
 	postgresConf := repository.PostgresConfig{

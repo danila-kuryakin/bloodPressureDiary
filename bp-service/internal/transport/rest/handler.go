@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"bloodPressureDiary/bp-service/internal/service"
+	"bp-service/internal/service"
 	"bytes"
 	"fmt"
 	"io"

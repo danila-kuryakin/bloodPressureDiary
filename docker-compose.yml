@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  db-postgres:
+    image: postgres:17
+    container_name: db-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123321
+      POSTGRES_DB: bloodPressureDiary
+      PGPORT: 5432
+    restart: unless-stopped
+    ports:
+      - "5434:5434"
+
+  bp-service:
+    build:
+      context: .
+      dockerfile: bp-service/Dockerfile
+    container_name: bp-service
+
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SERVICE_TOKEN_API: ${SERVICE_TOKEN_API}
+    depends_on:
+      - db-postgres
+    restart: unless-stopped
+
+  bp-telegram-bot:
+    build:
+      context: .
+      dockerfile: bp-telegram-bot/Dockerfile
+    container_name: bp-telegram-bot
+    environment:
+      TG_TOKEN: ${TG_TOKEN}
+      BP_API_URL: ${BP_API_URL}
+      SERVICE_TOKEN_API: ${SERVICE_TOKEN_API}
+    depends_on:
+      - bp-service
+    restart: unless-stopped
+
+volumes:
+  db_data:

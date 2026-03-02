@@ -1,15 +1,15 @@
 package main
 
 import (
-	"bloodPressureDiary/bp-telegram-bot/internal/api"
-	"bloodPressureDiary/bp-telegram-bot/internal/bot"
-	"bloodPressureDiary/bp-telegram-bot/internal/config"
+	"bp-telegram-bot/internal/api"
+	"bp-telegram-bot/internal/bot"
+	"bp-telegram-bot/internal/config"
 	"os"
 )
 
 func main() {
 
-	config.LoadEnv("bp-telegram-bot/.env")
+	config.LoadEnv(".env")
 	token := os.Getenv("TG_TOKEN")
 	apiURL := os.Getenv("BP_API_URL")
 

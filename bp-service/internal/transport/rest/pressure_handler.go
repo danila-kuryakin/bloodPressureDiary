@@ -1,12 +1,11 @@
 package rest
 
 import (
-	"bloodPressureDiary/bp-service/internal/model"
-	"bloodPressureDiary/bp-service/internal/service"
+	"bp-service/internal/model"
+	"bp-service/internal/service"
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 )
 
 type PressureHandler struct {
@@ -23,11 +22,11 @@ func (h *PressureHandler) Register(mux *http.ServeMux) {
 
 func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("user_id")
-	tokenApi := r.Header.Get("token_api")
-
-	if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
-		return
-	}
+	//tokenApi := r.Header.Get("token_api")
+	//
+	//if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
+	//	return
+	//}
 
 	switch r.Method {
 	case http.MethodPost:
