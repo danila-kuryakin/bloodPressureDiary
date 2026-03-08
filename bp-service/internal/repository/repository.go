@@ -10,6 +10,7 @@ import (
 type PressureRepository interface {
 	Create(ctx context.Context, p *model.BloodPressure) error
 	ListByUser(ctx context.Context, userID string) ([]*model.BloodPressure, error)
+	Delete(ctx context.Context, id int64, userID string) error
 }
 
 type TagRepository interface {

@@ -16,3 +16,7 @@ type RetTag struct {
 	PressureId int64  `json:"pressure_id"`
 	Tag        string `json:"name"`
 }
+
+type DeletePressure struct {
+	ID int64 `json:"id"`
+}

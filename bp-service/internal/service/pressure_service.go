@@ -34,3 +34,7 @@ func (s *PressureService) Create(ctx context.Context, p *model.BloodPressure) er
 func (s *PressureService) List(ctx context.Context, userID string) ([]*model.BloodPressure, error) {
 	return s.repo.PressureRepository.ListByUser(ctx, userID)
 }
+
+func (s *PressureService) Delete(ctx context.Context, id int64, userID string) error {
+	return s.repo.PressureRepository.Delete(ctx, id, userID)
+}

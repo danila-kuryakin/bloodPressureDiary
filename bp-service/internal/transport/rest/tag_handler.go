@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 type TagHandler struct {
@@ -23,11 +24,11 @@ func (h *TagHandler) Register(mux *http.ServeMux) {
 
 func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
 	userId := r.Header.Get("user_id")
-	//tokenApi := r.Header.Get("token_api")
-	//
-	//if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
-	//	return
-	//}
+	tokenApi := r.Header.Get("token_api")
+
+	if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
+		return
+	}
 
 	switch r.Method {
 	case http.MethodPost:
@@ -60,11 +61,11 @@ func (h *TagHandler) tags(w http.ResponseWriter, r *http.Request) {
 
 func (h *TagHandler) tagByID(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("user_id")
-	//tokenApi := r.Header.Get("token_api")
-	//
-	//if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
-	//	return
-	//}
+	tokenApi := r.Header.Get("token_api")
+
+	if tokenApi != os.Getenv("SERVICE_TOKEN_API") {
+		return
+	}
 
 	tagName := r.URL.Path[len("/tags/"):]
 	switch r.Method {

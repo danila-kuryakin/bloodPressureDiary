@@ -4,7 +4,6 @@ import (
 	"bp-service/internal/model"
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 
 	"github.com/lib/pq"
@@ -144,7 +143,7 @@ func (r *PressureRepo) ListByUser(ctx context.Context, userID string) ([]*model.
 			log.Println("ListByUser Rows Scan error:", err)
 			return nil, err
 		}
-		fmt.Println("retTag", *retTag)
+		//fmt.Println("retTag", *retTag)
 
 		if tagsMap[retTag.PressureId] == nil {
 			tagsMap[retTag.PressureId] = []string{retTag.Tag}
@@ -153,15 +152,44 @@ func (r *PressureRepo) ListByUser(ctx context.Context, userID string) ([]*model.
 		}
 	}
 
-	fmt.Println("tagsMap", tagsMap)
+	//fmt.Println("tagsMap", tagsMap)
 
 	for _, pressure := range pressures {
 		pressure.TagNames = tagsMap[pressure.ID]
 	}
 
-	for _, prs := range pressures {
-		fmt.Println("pressures:", prs)
-	}
+	//for _, prs := range pressures {
+	//	fmt.Println("pressures:", prs)
+	//}
 
 	return pressures, nil
+}
+
+func (r *PressureRepo) Delete(ctx context.Context, id int64, userID string) error {
+
+	log.Println("Repo Pressure Delete", id, userID)
+
+	//used, err := r.IsUsed(ctx, tagName)
+	//if err != nil {
+	//	return err
+	//}
+	//
+	//log.Println("1")
+	//
+	//if used {
+	//	_, err = r.db.ExecContext(ctx, `
+	//		UPDATE user_tags
+	//		SET is_active=false
+	//		WHERE name=$1 AND user_id=$2`,
+	//		tagName, userID)
+	//	return err
+	//}
+	//
+	//log.Println("1")
+
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM blood_pressure WHERE id=$1 AND user_id=$2`,
+		id, userID)
+
+	return err
 }

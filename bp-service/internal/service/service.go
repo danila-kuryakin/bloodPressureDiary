@@ -9,6 +9,7 @@ import (
 type Pressure interface {
 	Create(ctx context.Context, p *model.BloodPressure) error
 	List(ctx context.Context, userID string) ([]*model.BloodPressure, error)
+	Delete(ctx context.Context, id int64, userID string) error
 }
 
 type Tag interface {

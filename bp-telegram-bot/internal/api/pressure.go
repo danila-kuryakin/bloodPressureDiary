@@ -4,6 +4,7 @@ import (
 	"bp-telegram-bot/internal/model"
 	"encoding/json"
 	"io"
+	"log"
 	"strconv"
 )
 
@@ -47,7 +48,7 @@ func (c *Client) UpdatePressure(id int, p model.BloodPressure, userId string) er
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			log.Println("Error closing body:", err)
 		}
 	}(resp.Body)
 	return nil
@@ -61,7 +62,7 @@ func (c *Client) DeletePressure(id int, userId string) error {
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
+			log.Println("Error closing body:", err)
 		}
 	}(resp.Body)
 	return nil

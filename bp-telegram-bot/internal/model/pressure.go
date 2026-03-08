@@ -11,3 +11,7 @@ type BloodPressure struct {
 	TagNames  []string  `json:"tag_names"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type DeletePressure struct {
+	ID int64 `json:"id"`
+}

@@ -1,43 +1,29 @@
 package bot
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
+	"regexp"
 )
 
-func splitInts(input string) []int {
-	parts := strings.Split(input, ",")
-	result := make([]int, 0, len(parts))
-
-	for _, p := range parts {
-		p = strings.TrimSpace(p)
-		if p == "" {
-			continue
-		}
-
-		if v, err := strconv.Atoi(p); err == nil {
-			result = append(result, v)
-		}
-	}
-
-	return result
+func IsTwoOrThreeDigits(s string) bool {
+	re := regexp.MustCompile(`^\d{2,3}$`)
+	return re.MatchString(s)
 }
 
-func getIntFromBuffer(buf map[string]any, key string) (int, error) {
-	val, exists := buf[key]
-	if !exists {
-		return 0, fmt.Errorf("key not found")
+func RemoveByID(keys []int, index int) []int {
+	if index < 0 || index >= len(keys) {
+		return keys
 	}
 
-	switch v := val.(type) {
-	case int:
-		return v, nil
-	case int64:
-		return int(v), nil
-	case string:
-		return strconv.Atoi(v)
-	default:
-		return 0, fmt.Errorf("unsupported type %T", v)
-	}
+	newKeys := append(keys[:index], keys[index+1:]...)
+	return newKeys
 }
+
+//func RemoveByID[T any](slice []T, i int) []T {
+//	// Проверки на корректность индекса
+//	if i < 0 || i >= len(slice) {
+//		return slice // или можно паниковать: panic("index out of range")
+//	}
+//
+//	// Основной способ удаления
+//	return append(slice[:i], slice[i+1:]...)
+//}

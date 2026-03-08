@@ -3,6 +3,7 @@ package bot
 import (
 	"bp-telegram-bot/internal/bot/constants"
 	"fmt"
+	"strconv"
 
 	"gopkg.in/telebot.v3"
 )
@@ -23,6 +24,7 @@ func crudPressureMenu() *telebot.ReplyMarkup {
 	m.Inline(
 		m.Row(
 			m.Data(constants.NameCreate, constants.EventPressureCreate),
+			m.Data(constants.NameDelete, constants.EventPressureDelete),
 		),
 		m.Row(
 			m.Data(constants.NameBack, constants.EventBack),
@@ -50,13 +52,52 @@ func createPressureMenu() *telebot.ReplyMarkup {
 	return m
 }
 
-func saveTagPressureMenu() *telebot.ReplyMarkup {
+func deletePressureMenu(keys []int) *telebot.ReplyMarkup {
 	m := &telebot.ReplyMarkup{}
-	m.Inline(
-		m.Row(
-			m.Data(constants.NameBack, constants.EventBack),
-		),
-	)
+	if len(keys) == 0 {
+		m.Inline(
+			m.Row(
+				m.Data(constants.NameBack, constants.EventBack),
+			),
+		)
+		return m
+	}
+
+	var buttons []telebot.Btn
+	for i := 0; i < len(keys); i += 2 {
+		btn := m.Data(strconv.Itoa(keys[i]+1), fmt.Sprintf("event_delete_pressure_%d", keys[i]))
+		buttons = append(buttons, btn)
+
+		if i+1 < len(keys) {
+			btn = m.Data(strconv.Itoa(keys[i+1]+1), fmt.Sprintf("event_delete_pressure_%d", keys[i+1]))
+		} else {
+			btn = m.Data(" ", "empty")
+		}
+		buttons = append(buttons, btn)
+	}
+
+	var rows []telebot.Row
+	const perRow = 2
+
+	for i := 0; i < len(buttons); i += perRow {
+		end := i + perRow
+		if end > len(buttons) {
+			end = len(buttons)
+		}
+
+		// берём срез кнопок для текущей строки
+		rowButtons := buttons[i:end]
+
+		// создаём строку (Row)
+		rows = append(rows, m.Row(rowButtons...))
+	}
+
+	// ─── Добавляем кнопку "Назад" в отдельной строке ───
+	backBtn := m.Data(constants.NameBack, constants.EventBack)
+	rows = append(rows, m.Row(backBtn))
+
+	// ─── Собираем всю клавиатуру ───
+	m.Inline(rows...)
 	return m
 }
 
@@ -133,7 +174,7 @@ func deleteTagMenu(tags map[int]string) *telebot.ReplyMarkup {
 	return m
 }
 
-func addPressureTagMenu(tags map[int]string) *telebot.ReplyMarkup {
+func addPressureTagMenu(tags map[int]string, fastSave bool) *telebot.ReplyMarkup {
 	m := &telebot.ReplyMarkup{}
 	if len(tags) == 0 {
 		m.Inline(
@@ -145,13 +186,13 @@ func addPressureTagMenu(tags map[int]string) *telebot.ReplyMarkup {
 	}
 	var buttons []telebot.Btn
 	for i := 0; i < len(tags); i += 2 {
-		btn := m.Data(tags[i], fmt.Sprintf("event_add_tag_%d", i))
+		btn := m.Data(tags[i], fmt.Sprintf("event_add_pressure_tag_%d", i))
 		buttons = append(buttons, btn)
 
 		if i+1 < len(tags) {
-			btn = m.Data(tags[i+1], fmt.Sprintf("event_add_tag_%d", i+1))
+			btn = m.Data(tags[i+1], fmt.Sprintf("event_add_pressure_tag_%d", i+1))
 		} else {
-			btn = m.Data(" ", "empty")
+			btn = m.Data(" ", constants.EventEmpty)
 		}
 		buttons = append(buttons, btn)
 	}
@@ -170,6 +211,11 @@ func addPressureTagMenu(tags map[int]string) *telebot.ReplyMarkup {
 
 		// создаём строку (Row)
 		rows = append(rows, m.Row(rowButtons...))
+	}
+
+	if fastSave {
+		saveBtn := m.Data(constants.NameSave, constants.EventPressureSave)
+		rows = append(rows, m.Row(saveBtn))
 	}
 
 	// ─── Добавляем кнопку "Назад" в отдельной строке ───
