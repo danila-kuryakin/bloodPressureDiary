@@ -48,7 +48,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			keys = append(keys, i)
 			pressuresList[i] = pressures[i]
 		}
-		//bot.buffer[chatID]["PressureKeys"] = keys
 		bot.buffer[chatID]["PressureList"] = pressuresList
 
 		pressureStr := bot.pressureList(pressuresList, keys)
@@ -80,7 +79,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		bot.state[chatID] = constants.StatePressureCreate
 		return c.Edit("Выберете что хотите ввести.", createPressureMenu())
 	case constants.EventPressureDelete:
-		//pressureKeys := bot.buffer[chatID]["PressureKeys"].([]int)
 		pressureListMap := bot.buffer[chatID]["PressureList"].(map[int]model.BloodPressure)
 
 		keys := make([]int, 0, len(pressureListMap))
@@ -312,10 +310,8 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 				return err
 			}
 
-			//pressureKeys := bot.buffer[chatID]["PressureKeys"].([]int)
 			pressureList := bot.buffer[chatID]["PressureList"].(map[int]model.BloodPressure)
 
-			//keys = RemoveByID(keys, id)
 			delete(pressureList, id)
 			bot.buffer[chatID]["PressureList"] = pressureList
 
@@ -327,7 +323,6 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 			pressureStr := bot.pressureList(pressureList, keys)
 			return c.Edit(pressureStr, deletePressureMenu(keys))
-			//return c.Respond()
 		} else {
 			return c.Respond()
 		}
@@ -342,7 +337,6 @@ func (bot *Bot) pressureList(press map[int]model.BloodPressure, keys []int) stri
 	} else {
 		retStr = "Меню давления.\nВаши измерения:\n"
 		for _, key := range keys {
-			fmt.Println(key, ") ", press[key])
 
 			if key < 9 {
 				retStr += fmt.Sprintf("%d)   %d-%d-%d | %s | ", key+1, press[key].Systolic, press[key].Diastolic, press[key].Pulse, press[key].CreatedAt.Format("15:04:05 02.01.06"))
@@ -361,7 +355,6 @@ func (bot *Bot) pressureList(press map[int]model.BloodPressure, keys []int) stri
 				}
 			}
 		}
-		fmt.Println("\n\n\n")
 		if len(press) <= constants.MAX_VIEW_PRESSURE {
 			retStr += fmt.Sprintf("Показано %d из %d\n", len(press), len(press))
 		} else {

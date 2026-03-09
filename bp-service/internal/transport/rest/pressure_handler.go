@@ -101,10 +101,9 @@ func (h *PressureHandler) pressureById(w http.ResponseWriter, r *http.Request) {
 		pressure := h.buffer[userID][keyStr].(*model.BloodPressure)
 		fmt.Println("pressure", pressure)
 
-		//err := h.svc.Pressure.Delete(r.Context(), pressure.ID, userID)
-		//if err != nil {
-		//	return
-		//}
+		if h.svc.Pressure.Delete(r.Context(), pressure.ID, userID) != nil {
+			return
+		}
 		return
 	}
 }
