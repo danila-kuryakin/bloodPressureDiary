@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package message;
+
+option go_package = "grpc-pressure/proto;proto";
+
+import "google/protobuf/timestamp.proto";
+
+service BloodPressureService {
+  rpc CreatePressure (BloodPressureRequest)
+      returns (PressureResponse);
+
+  rpc UpdatePressure (BloodPressureRequest)
+      returns (PressureResponse);
+
+  rpc DeletePressure (DeletePressureRequest)
+      returns (PressureResponse);
+
+  rpc ListPressure (ListPressureRequest)
+      returns (ListBloodPressureRequest);
+
+}
+
+message BloodPressureRequest {
+  int64 ID = 1;
+  string UserID = 2;
+  int32 Systolic = 3;
+  int32 Diastolic = 4;
+  int32 Pulse = 5;
+  repeated string TagNames = 6;
+  google.protobuf.Timestamp CreatedAt = 7;
+}
+
+message ListBloodPressureRequest {
+  repeated BloodPressureRequest BPR = 1;
+}
+
+message ListPressureRequest {
+  string UserID = 1;
+}
+
+message DeletePressureRequest {
+  int64 ID = 1;
+  string UserID = 2;
+}
+
+message PressureResponse {
+  string status = 1;
+}

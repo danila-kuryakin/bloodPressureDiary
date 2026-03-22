@@ -15,8 +15,8 @@ type Pressure interface {
 type Tag interface {
 	Create(ctx context.Context, tag *model.UserTag) error
 	List(ctx context.Context, userID string) ([]*model.UserTag, error)
-	Rename(ctx context.Context, tagName string, userID, name string) error
-	Delete(ctx context.Context, tagName string, userID string) error
+	Update(ctx context.Context, tagName, userID, name string) error
+	Delete(ctx context.Context, tagName, userID string) error
 }
 
 type Service struct {

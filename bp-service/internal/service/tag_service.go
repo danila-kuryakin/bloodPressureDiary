@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bp-service/internal/errors"
+	"bp-service/internal/customErrors"
 	"bp-service/internal/model"
 	"bp-service/internal/repository"
 	"context"
@@ -17,7 +17,7 @@ func NewTagService(r *repository.Repository) *TagService {
 
 func (s *TagService) Create(ctx context.Context, tag *model.UserTag) error {
 	if tag.UserID == "" {
-		return errors.ErrInvalidTagName
+		return customErrors.ErrInvalidTagName
 	}
 	return s.repo.TagRepository.Create(ctx, tag)
 }
@@ -26,13 +26,13 @@ func (s *TagService) List(ctx context.Context, userID string) ([]*model.UserTag,
 	return s.repo.TagRepository.ListActiveByUser(ctx, userID)
 }
 
-func (s *TagService) Rename(ctx context.Context, tagName string, userID, name string) error {
+func (s *TagService) Update(ctx context.Context, tagName, userID, name string) error {
 	if name == "" {
-		return errors.ErrInvalidTagName
+		return customErrors.ErrInvalidTagName
 	}
-	return s.repo.TagRepository.Rename(ctx, tagName, userID, name)
+	return s.repo.TagRepository.Update(ctx, tagName, userID, name)
 }
 
-func (s *TagService) Delete(ctx context.Context, tagName string, userID string) error {
+func (s *TagService) Delete(ctx context.Context, tagName, userID string) error {
 	return s.repo.TagRepository.Delete(ctx, tagName, userID)
 }

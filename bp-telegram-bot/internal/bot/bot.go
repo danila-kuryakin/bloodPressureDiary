@@ -10,19 +10,18 @@ import (
 
 type Bot struct {
 	tb    *telebot.Bot
-	api   *api.Client
+	api   *api.ClientAPI
 	state map[int64]constants.State
 
 	buffer map[int64]map[string]any
 }
 
-func NewBot(token string, api *api.Client) *Bot {
+func NewBot(token string, api *api.ClientAPI) *Bot {
 	tb, err := telebot.NewBot(telebot.Settings{
 		Token:  token,
 		Poller: &telebot.LongPoller{Timeout: 10 * time.Second},
 	})
 
-	//log.Println(tb, err)
 	if err != nil {
 		return nil
 	}

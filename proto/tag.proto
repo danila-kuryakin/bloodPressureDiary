@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package message;
+
+option go_package = "grpc-tag/proto;proto";
+
+import "google/protobuf/timestamp.proto";
+
+service TagService {
+  rpc CreateTag (UserTagRequest)
+      returns (TagResponse);
+
+  rpc UpdateTag (UserTagRequest)
+      returns (TagResponse);
+
+  rpc DeleteTag (DeleteTagRequest)
+      returns (TagResponse);
+
+  rpc ListTag (ListTagRequest)
+      returns (ListUserTagRequest);
+}
+
+message UserTagRequest {
+  int64 ID = 1;
+  string UserID = 2;
+  string Name = 3;
+  bool IsActive = 4;
+  google.protobuf.Timestamp CreatedAt = 5;
+}
+
+message ListUserTagRequest {
+  repeated UserTagRequest UTR = 1;
+}
+
+message ListTagRequest {
+  string UserID = 1;
+}
+
+message DeleteTagRequest {
+  string UserID = 1;
+  string Name = 2;
+}
+
+message TagResponse {
+  string status = 1;
+}

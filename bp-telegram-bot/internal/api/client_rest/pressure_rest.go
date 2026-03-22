@@ -1,4 +1,4 @@
-package api
+package client_rest
 
 import (
 	"bp-telegram-bot/internal/model"
@@ -8,23 +8,31 @@ import (
 	"strconv"
 )
 
-func (c *Client) CreatePressure(p model.BloodPressure, userId string) error {
-	resp, err := c.do("POST", "/pressure", p, userId)
+type PressureRest struct {
+	rest *ClientRest
+}
+
+func NewPressureRest(rest *ClientRest) *PressureRest {
+	return &PressureRest{
+		rest: rest,
+	}
+}
+
+func (c *PressureRest) CreatePressure(p model.BloodPressure) error {
+	resp, err := c.rest.do("POST", "/pressure", p, p.UserID)
 	if err != nil {
 		return err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-
 		}
 	}(resp.Body)
 	return nil
-
 }
 
-func (c *Client) ListPressure(userId string) ([]model.BloodPressure, error) {
-	resp, err := c.do("GET", "/pressure", nil, userId)
+func (c *PressureRest) ListPressure(userId string) ([]*model.BloodPressure, error) {
+	resp, err := c.rest.do("GET", "/pressure", nil, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -34,14 +42,13 @@ func (c *Client) ListPressure(userId string) ([]model.BloodPressure, error) {
 
 		}
 	}(resp.Body)
-
-	var press []model.BloodPressure
+	var press []*model.BloodPressure
 	err = json.NewDecoder(resp.Body).Decode(&press)
 	return press, err
 }
 
-func (c *Client) UpdatePressure(id int, p model.BloodPressure, userId string) error {
-	resp, err := c.do("PUT", "/pressure/"+strconv.Itoa(id), p, userId)
+func (c *PressureRest) UpdatePressure(p model.BloodPressure) error {
+	resp, err := c.rest.do("PUT", "/pressure/"+strconv.FormatInt(p.ID, 10), p, p.UserID)
 	if err != nil {
 		return err
 	}
@@ -54,8 +61,8 @@ func (c *Client) UpdatePressure(id int, p model.BloodPressure, userId string) er
 	return nil
 }
 
-func (c *Client) DeletePressure(id int, userId string) error {
-	resp, err := c.do("DELETE", "/pressure/"+strconv.Itoa(id), nil, userId)
+func (c *PressureRest) DeletePressure(id int64, userId string) error {
+	resp, err := c.rest.do("DELETE", "/pressure/"+strconv.FormatInt(id, 10), nil, userId)
 	if err != nil {
 		return err
 	}

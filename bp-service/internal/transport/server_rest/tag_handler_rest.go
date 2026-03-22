@@ -1,4 +1,4 @@
-package rest
+package server_rest
 
 import (
 	"bp-service/internal/model"
@@ -71,8 +71,15 @@ func (h *TagHandler) tagByID(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodPut:
 		var body struct{ Name string }
-		json.NewDecoder(r.Body).Decode(&body)
-		h.svc.Tag.Rename(r.Context(), tagName, userID, body.Name)
+		err := json.NewDecoder(r.Body).Decode(&body)
+		if err != nil {
+			return
+		}
+		err = h.svc.Tag.Update(r.Context(), tagName, userID, body.Name)
+		if err != nil {
+			log.Printf("Rename tag %s to %s error: %v", tagName, userID, err)
+			return
+		}
 
 	case http.MethodDelete:
 		err := h.svc.Tag.Delete(r.Context(), tagName, userID)

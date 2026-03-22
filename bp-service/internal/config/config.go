@@ -17,7 +17,12 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port string `yaml:"port"`
+	Port Ports `yaml:"port"`
+}
+
+type Ports struct {
+	GRPC string `yaml:"grpc"`
+	Rest string `yaml:"rest"`
 }
 type DatabaseConfig struct {
 	Host    string `yaml:"host"`

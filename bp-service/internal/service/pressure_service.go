@@ -1,7 +1,7 @@
 package service
 
 import (
-	"bp-service/internal/errors"
+	"bp-service/internal/customErrors"
 	"bp-service/internal/model"
 	"bp-service/internal/repository"
 	"context"
@@ -25,7 +25,7 @@ func (s *PressureService) Create(ctx context.Context, p *model.BloodPressure) er
 		}
 		if !ok {
 			log.Println("Tag exists: ", tagName)
-			return errors.ErrTagNotOwnedByUser
+			return customErrors.ErrTagNotOwnedByUser
 		}
 	}
 	return s.repo.PressureRepository.Create(ctx, p)

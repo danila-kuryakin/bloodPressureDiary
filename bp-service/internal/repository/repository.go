@@ -17,7 +17,7 @@ type TagRepository interface {
 	Create(ctx context.Context, tag *model.UserTag) error
 	CreateAll(ctx context.Context, tag *model.UserTag) error
 	ListActiveByUser(ctx context.Context, userID string) ([]*model.UserTag, error)
-	Rename(ctx context.Context, tagName string, userID, name string) error
+	Update(ctx context.Context, tagName string, userID, name string) error
 	Delete(ctx context.Context, tagName string, userID string) error
 	ExistsForUser(ctx context.Context, userID string, tagName string) (bool, error)
 	IsUsed(ctx context.Context, tagName string) (bool, error)

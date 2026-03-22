@@ -120,7 +120,7 @@ func (r *TagRepo) IsUsed(ctx context.Context, tagName string) (bool, error) {
 	return used, err
 }
 
-func (r *TagRepo) Rename(ctx context.Context, tagName string, userID, name string) error {
+func (r *TagRepo) Update(ctx context.Context, tagName, userID, name string) error {
 	_, err := r.db.ExecContext(ctx, `
 		UPDATE user_tags
 		SET name=$1

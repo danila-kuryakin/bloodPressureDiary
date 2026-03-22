@@ -1,4 +1,4 @@
-package rest
+package server_rest
 
 import (
 	"bp-service/internal/service"

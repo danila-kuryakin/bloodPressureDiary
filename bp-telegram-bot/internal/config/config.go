@@ -15,7 +15,12 @@ func LoadEnv(path string) {
 	if err != nil {
 		log.Println(err)
 	}
-	defer file.Close()
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Printf("Error closing file: %v", err)
+		}
+	}(file)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -34,6 +39,10 @@ func LoadEnv(path string) {
 		key := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
 
-		os.Setenv(key, value)
+		err := os.Setenv(key, value)
+		if err != nil {
+			log.Printf("Error setting env var: %v", err)
+			return
+		}
 	}
 }

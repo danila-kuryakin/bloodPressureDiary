@@ -32,7 +32,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventPressure:
 		bot.state[chatID] = constants.StatePressure
 
-		pressures, err := bot.api.ListPressure(strconv.FormatInt(chatID, 10))
+		pressures, err := bot.api.BloodPressureAPI.ListPressure(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		}
 		for i := range lenKeys {
 			keys = append(keys, i)
-			pressuresList[i] = pressures[i]
+			pressuresList[i] = *pressures[i]
 		}
 		bot.buffer[chatID]["PressureList"] = pressuresList
 
@@ -56,7 +56,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventTag:
 		bot.state[chatID] = constants.StateTag
 
-		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		tags, err := bot.api.TagAPI.ListTags(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
 		}
@@ -104,7 +104,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventPressureTags:
 		bot.state[chatID] = constants.StatePressureTags
 
-		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		tags, err := bot.api.TagAPI.ListTags(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
 		}
@@ -134,13 +134,14 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 		}
 
 		press := model.BloodPressure{
-			Systolic:  bot.buffer[chatID]["Systolic"].(int),
-			Diastolic: bot.buffer[chatID]["Diastolic"].(int),
-			Pulse:     bot.buffer[chatID]["Pulse"].(int),
+			UserID:    strconv.FormatInt(chatID, 10),
+			Systolic:  int32(bot.buffer[chatID]["Systolic"].(int)),
+			Diastolic: int32(bot.buffer[chatID]["Diastolic"].(int)),
+			Pulse:     int32(bot.buffer[chatID]["Pulse"].(int)),
 			TagNames:  bot.buffer[chatID]["Tags"].([]string),
 		}
 
-		err := bot.api.CreatePressure(press, strconv.FormatInt(chatID, 10))
+		err := bot.api.BloodPressureAPI.CreatePressure(press)
 		if err != nil {
 			return err
 		}
@@ -156,7 +157,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 	case constants.EventTagDelete:
 		bot.state[chatID] = constants.StateTagDelete
 
-		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		tags, err := bot.api.TagAPI.ListTags(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
 		}
@@ -182,7 +183,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 				CreatedAt: time.Now(),
 			}
 
-			err := bot.api.CreateTag(tags, strconv.FormatInt(chatID, 10))
+			err := bot.api.TagAPI.CreateTag(tags, strconv.FormatInt(chatID, 10))
 			if err != nil {
 				return err
 			}
@@ -210,8 +211,14 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			return c.Edit(retStr, createPressureMenu())
 
 		case constants.StatePressureCreate:
-			pressureKeys := bot.buffer[chatID]["PressureKeys"].([]int)
-			pressureListMap := bot.buffer[chatID]["PressureList"].(map[int]model.BloodPressure)
+			pressureKeys, ok := bot.buffer[chatID]["PressureKeys"].([]int)
+			if !ok {
+				return fmt.Errorf("wrong type PressureKeys")
+			}
+			pressureListMap, ok := bot.buffer[chatID]["PressureList"].(map[int]model.BloodPressure)
+			if !ok {
+				return fmt.Errorf("wrong type PressureKeys")
+			}
 
 			bot.state[chatID] = constants.StatePressure
 
@@ -226,7 +233,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 		case constants.StateTagCreate, constants.StateTagDelete:
 			bot.state[chatID] = constants.StatePressure
-			tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+			tags, err := bot.api.TagAPI.ListTags(strconv.FormatInt(chatID, 10))
 			if err != nil {
 				return err
 			}
@@ -260,7 +267,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 
 			delTags := bot.buffer[chatID]["DeleteTags"].(map[int]string)
 			// тут вызываешь API удаления тега
-			err = bot.api.DeleteTag(delTags[id], strconv.FormatInt(chatID, 10))
+			err = bot.api.TagAPI.DeleteTag(delTags[id], strconv.FormatInt(chatID, 10))
 			if err != nil {
 				return err
 			}
@@ -306,7 +313,7 @@ func (bot *Bot) Callbacks(c telebot.Context) error {
 			}
 
 			// тут вызываешь API удаления тега
-			if bot.api.DeletePressure(id, strconv.FormatInt(chatID, 10)) != nil {
+			if bot.api.BloodPressureAPI.DeletePressure(int64(id), strconv.FormatInt(chatID, 10)) != nil {
 				return err
 			}
 
@@ -448,7 +455,7 @@ func (bot *Bot) Messages(c telebot.Context) error {
 			backMenu())
 
 	case constants.StatePressurePulseFast:
-		tags, err := bot.api.ListTags(strconv.FormatInt(chatID, 10))
+		tags, err := bot.api.TagAPI.ListTags(strconv.FormatInt(chatID, 10))
 		if err != nil {
 			return err
 		}

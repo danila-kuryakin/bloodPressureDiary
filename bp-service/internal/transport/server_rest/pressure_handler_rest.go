@@ -1,4 +1,4 @@
-package rest
+package server_rest
 
 import (
 	"bp-service/internal/model"
@@ -21,11 +21,11 @@ func NewPressureHandler(s *service.Service) *PressureHandler {
 }
 
 func (h *PressureHandler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/pressure", h.pressure)
-	mux.HandleFunc("/pressure/", h.pressureById)
+	mux.HandleFunc("/pressure", h.Pressure)
+	mux.HandleFunc("/pressure/", h.PressureById)
 }
 
-func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
+func (h *PressureHandler) Pressure(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("user_id")
 	tokenApi := r.Header.Get("token_api")
 
@@ -77,7 +77,7 @@ func (h *PressureHandler) pressure(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *PressureHandler) pressureById(w http.ResponseWriter, r *http.Request) {
+func (h *PressureHandler) PressureById(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("user_id")
 	tokenApi := r.Header.Get("token_api")
 
